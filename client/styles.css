@@ -1,0 +1,56 @@
+#mainContainer{
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+#mainTitle{
+    font-size: xx-large;
+    padding-bottom: 1em;
+}
+
+#mapCanvas, #outputMapCanvas{
+    border: black solid 2px;
+}
+
+#mapContainer{
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+}
+
+#inputContainer{
+    font-size: xx-large;
+    margin-left: 2em;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-evenly;
+}
+
+#inputContainer input{
+    font-size: large;
+    height: 2em;
+}
+
+#formSubmit{
+    margin-left: auto;
+    margin-right: auto;
+    font-size: x-large;
+    width: fit-content;
+}
+
+#positionIndicator{
+    font-size: x-large;
+    margin-top: 20px;
+}
+
+#controlContainer{
+    display: flex;
+    flex-direction: column;
+    margin-right: 2em;
+}
+
+.singleInputContainer{
+    display: flex;
+    justify-content: space-between;
+}

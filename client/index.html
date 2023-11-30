@@ -1,0 +1,28 @@
+<html>
+    <head>
+        <title>2DMapViz</title>
+        <link rel="stylesheet" href="styles.css"/>
+    </head>
+    <body>
+        <div id="mainContainer">
+            <div id="mainTitle">2DMapViz</div>
+            <div id="mapContainer">
+                <div id="controlContainer">
+                    <label class="singleInputContainer">RAYS:<input id="showRaysRadioInput" type="radio"></label>
+                    <label class="singleInputContainer">BASE COOR SYS:<input id="showBaseCoordInput" type="radio"></label>
+                    <label class="singleInputContainer">ROBOT COOR SYS:<input id="showRobotCoordInput" type="radio"></label>
+                </div>
+                <canvas id="mapCanvas"></canvas>
+                <canvas id="outputMapCanvas"></canvas>
+                <form id="inputContainer">
+                    <label>x: <input id="xinput" value="0" type="number"></label>
+                    <label>y: <input id="yinput" value="0" type="number"></label> 
+                    <label>z: <input id="zinput" value="0" type="number"></label>
+                    <button id="formSubmit">submit</button>
+                </form>
+            </div>
+            <div id="positionIndicator">Current position = {x : 0, y: 0}</div>
+        </div>
+    </body>
+    <script type="module" src="./out/main.js"></script>
+</html>
