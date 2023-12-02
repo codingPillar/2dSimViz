@@ -68,6 +68,7 @@ pair<vector<float>, unsigned int> parseList(const char *buffer, unsigned int len
     return {elems, length};
 }
 
+/* SUPPORTS ONLY VALUES OF TYPE STRING AND LIST OF NUMBERS */
 enum PARSE_OBJECT_STATE{
     WAITING_INIT,
     READING_KEY,
@@ -98,8 +99,7 @@ struct LidarData parseLidarObj(const char *buffer, unsigned int length){
                     start = i;
                     reading = true;
                 }else if(reading && buffer[i] == '"'){
-                    strncpy(keyBuffer, &buffer[start], i - start + 2);
-                    printf("KEY: %s\n", keyBuffer);
+                    strncpy(keyBuffer, &buffer[start + 1], i - start - 1);
                     state = WAITING_KEY_VALUE_SEP;
                     reading = false;
                 }
@@ -125,16 +125,20 @@ struct LidarData parseLidarObj(const char *buffer, unsigned int length){
                     state = WAITING_SEP;
                 }else if(reading && buffer[i] == '"' && buffer[start] == '"'){
                     /* DONE READING STRING */
-                    float value = atof(&buffer[start]);
+                    float value = atof(&buffer[start + 1]);
                     assignLidarDataField(data, keyBuffer, &value);
-                    printf("KEY: %s, VALUE: %f", keyBuffer, value);
                     state = WAITING_SEP;
                 }
             }break;
             case WAITING_SEP:{
+                reading = false;
                 if(isWhiteSpace(buffer[i])) continue;
-                else if(buffer[i] == ',') start = READING_KEY;
+                else if(buffer[i] == ',') state = READING_KEY;
                 else if(buffer[i] == '}') state = DONE;
+                else{
+                    cout << "WAITING FOR SEPERATOR BUT ENCOUTERED INVALID VALUE, ABORT" << endl;
+                    return {};
+                }
             }break;
             case DONE:{
                 return data;
