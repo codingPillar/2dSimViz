@@ -1,5 +1,5 @@
 import { floateq, getRandomBound } from "./common.js";
-import { ANGLE_VIEW, DEFAULT_OBSTACLE_COUNT, ERROR_DISTANCE, MAP_DOMAIN, NUM_RAYS, dt } from "./constants.js";
+import { ANGLE_VIEW, DEFAULT_OBSTACLE_COUNT, ERROR_DISTANCE, MAP_DOMAIN, MAP_IMAGE, NUM_RAYS, dt } from "./constants.js";
 import { Vec2 } from "./vec2.js";
 import { Twist } from "./messages.js";
 class LineObs {
@@ -42,11 +42,11 @@ export class Model {
     constructor() {
         /* MAP STATE */
         this.domain = new Vec2(-MAP_DOMAIN[0], MAP_DOMAIN[0]);
-        this.image = new Vec2(-MAP_DOMAIN[1], MAP_DOMAIN[1]);
+        this.image = new Vec2(-MAP_IMAGE[0], MAP_IMAGE[1]);
         /* ROBOT STATES */
         /* THIS WOULD BE THE ROBOT'S ODOM VALUE */
-        this.position = new Twist();
-        /* IN CURRENT MODE, ONLY FOUR_DIFF IS SUPPORTED (TODO, ADD SUPPORT, FOR MECANUM DRIVE) */
+        this.odom = new Twist();
+        /* IN CURRENT MODE, ONLY FOUR_DIFF IS SUPPORTED (TODO, ADD SUPPORT, FOR MECANUM DRIVE) (VEL IS IN ODOM COORDINATE SYSTEM) */
         this.velocity = new Twist();
         /* IN MAP COORDINATE SYSTEM */
         this.initialPosition = new Twist();
@@ -62,9 +62,14 @@ export class Model {
     }
     updateSim() {
         /* FOUR DIFF */
-        const displacement = Vec2.fromAngle(this.position.angular).mult(this.velocity.linear.x * dt);
-        this.position.linear.add(displacement);
-        this.position.angular += this.velocity.angular * dt;
+        const displacement = Vec2.fromAngle(this.odom.angular).mult(this.velocity.linear.x * dt);
+        this.odom.linear.add(displacement);
+        this.odom.angular += this.velocity.angular * dt;
+    }
+    /* TODO, UPDATE WHEN WE WANT TO ADD NEW MODES OF MOUVEMENT */
+    updateVel(linear, angular) {
+        this.velocity.linear.x = linear;
+        this.velocity.angular = angular;
     }
     setInitialPosition(position, orientation) {
         this.initialPosition.linear = position;
@@ -74,13 +79,13 @@ export class Model {
         return this.initialPosition.copy();
     }
     getOdomPosition() {
-        return this.position.copy();
+        return this.odom.copy();
     }
     getWorldPosition() {
         /* ROBOT ODOM IN MAP SPACE */
         const robotBaseX = Vec2.fromAngle(this.initialPosition.angular);
         const robotBaseY = Vec2.fromAngle(this.initialPosition.angular + Math.PI / 2);
-        return new Twist(this.initialPosition.linear.getAdd(robotBaseX.mult(this.position.linear.x).add(robotBaseY.mult(this.position.linear.y))), this.position.angular + this.initialPosition.angular);
+        return new Twist(this.initialPosition.linear.getAdd(robotBaseX.mult(this.odom.linear.x).add(robotBaseY.mult(this.odom.linear.y))), this.odom.angular + this.initialPosition.angular);
     }
     addRandomObstacle() {
         this.obstacles.push(new LineObs(new Vec2(getRandomBound(this.domain.x, this.domain.y), getRandomBound(this.image.x, this.image.y)), new Vec2(getRandomBound(this.domain.x, this.domain.y), getRandomBound(this.image.x, this.image.y))));

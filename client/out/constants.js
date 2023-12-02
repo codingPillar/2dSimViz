@@ -22,7 +22,9 @@ export const dt = 0.001;
 export const EPOCH = 20;
 /* MAP RELATED */
 export const DEFAULT_OBSTACLE_COUNT = 4;
-export const MAP_DOMAIN = [CANVAS_WIDTH / 2, CANVAS_WIDTH / 2];
+export const CANVAS_TO_MAP_FACTOR = 20;
+export const MAP_DOMAIN = [CANVAS_WIDTH / (2 * CANVAS_TO_MAP_FACTOR), CANVAS_WIDTH / (2 * CANVAS_TO_MAP_FACTOR)];
+export const MAP_IMAGE = [CANVAS_HEIGHT / (2 * CANVAS_TO_MAP_FACTOR), CANVAS_HEIGHT / (2 * CANVAS_TO_MAP_FACTOR)];
 /* MATH RELATED */
 export const EPSILON = 0.0001;
 /* LIDAR RELATED */

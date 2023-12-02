@@ -1,3 +1,4 @@
+import { CANVAS_TO_MAP_FACTOR } from "./constants.js";
 import { Vec2 } from "./vec2.js";
 
 const ARROW_END_POINT_ANGLE = Math.PI / 10;
@@ -47,11 +48,11 @@ export class DrawManager{
     }
 
     public transformToDomainCoord(position: Vec2): Vec2 {
-        return new Vec2(position.x - this.canvas.width / 2, -(position.y - this.canvas.height / 2));
+        return new Vec2(position.x - this.canvas.width / 2, -(position.y - this.canvas.height / 2)).mult(1 / CANVAS_TO_MAP_FACTOR);
     }
 
     public transformToCanvasCoord(position: Vec2): Vec2 {
-        return new Vec2(position.x + this.canvas.width / 2, -position.y + this.canvas.height / 2);
+        return new Vec2(position.x * CANVAS_TO_MAP_FACTOR + this.canvas.width / 2, -position.y * CANVAS_TO_MAP_FACTOR + this.canvas.height / 2);
     }
 
     /* PRIVATE MEMBERS */

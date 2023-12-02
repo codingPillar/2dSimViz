@@ -146,6 +146,8 @@ function main() {
         }
         /* SEND TO BASE NODE SENSOR DATA */
         /* TODO, IMPLEMENT */
+        /* RECEIVE NEW COMMAND_VEL */
+        //model.updateVel(10, 0);
     }, SECOND_MS / FPS);
 }
 main();
