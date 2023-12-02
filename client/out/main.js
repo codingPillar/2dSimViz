@@ -3,10 +3,12 @@ import { DrawManager } from "./drawManager.js";
 import { Model } from "./model.js";
 import { Vec2 } from "./vec2.js";
 class InputCheckBox {
-    constructor(target, callback = (target) => { }) {
+    constructor(target, callback = (target) => { }, initial = false) {
         this.checked = false;
         this.target = target;
         this.callback = callback;
+        this.checked = initial;
+        this.target.checked = this.checked;
         target.addEventListener('click', (event) => {
             this.checked = !this.checked;
             this.target.checked = this.checked;
@@ -102,13 +104,13 @@ function main() {
     const inputs = [
         new InputCheckBox(document.getElementById(SHOW_RAYS_RADIO_ID), (target) => {
             showRays = target.ischecked();
-        }),
+        }, showRays),
         new InputCheckBox(document.getElementById(SHOW_BASE_COORD_RADIO_ID), (target) => {
             showBaseCoord = target.ischecked();
-        }),
+        }, showBaseCoord),
         new InputCheckBox(document.getElementById(SHOW_ROBOT_COORD_RADIO_ID), (target) => {
             showRobotCoord = target.ischecked();
-        })
+        }, showRobotCoord)
     ];
     setInterval(() => {
         canvasManager.clearDisplay();

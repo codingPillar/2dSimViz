@@ -1,4 +1,4 @@
-import { floateq } from "./common.js";
+import { floateq, getRandomBound } from "./common.js";
 import { ANGLE_VIEW, DEFAULT_OBSTACLE_COUNT, ERROR_DISTANCE, MAP_DOMAIN, NUM_RAYS, dt } from "./constants.js";
 import { Vec2 } from "./vec2.js";
 import { Twist } from "./messages.js";
@@ -41,8 +41,8 @@ class LineObs {
 export class Model {
     constructor() {
         /* MAP STATE */
-        this.domain = new Vec2(-MAP_DOMAIN, MAP_DOMAIN);
-        this.image = new Vec2(-MAP_DOMAIN, MAP_DOMAIN);
+        this.domain = new Vec2(-MAP_DOMAIN[0], MAP_DOMAIN[0]);
+        this.image = new Vec2(-MAP_DOMAIN[1], MAP_DOMAIN[1]);
         /* ROBOT STATES */
         /* THIS WOULD BE THE ROBOT'S ODOM VALUE */
         this.position = new Twist();
@@ -54,6 +54,11 @@ export class Model {
         this.obstacles = [];
         for (let i = 0; i < DEFAULT_OBSTACLE_COUNT; i++)
             this.addRandomObstacle();
+        /* ADD MAP BOUNDS OBSTACLE */
+        this.obstacles.push(new LineObs(new Vec2(-MAP_DOMAIN[0], MAP_DOMAIN[1]), new Vec2(MAP_DOMAIN[0], MAP_DOMAIN[1])));
+        this.obstacles.push(new LineObs(new Vec2(-MAP_DOMAIN[0], -MAP_DOMAIN[1]), new Vec2(MAP_DOMAIN[0], -MAP_DOMAIN[1])));
+        this.obstacles.push(new LineObs(new Vec2(-MAP_DOMAIN[0], -MAP_DOMAIN[1]), new Vec2(-MAP_DOMAIN[0], MAP_DOMAIN[1])));
+        this.obstacles.push(new LineObs(new Vec2(MAP_DOMAIN[0], -MAP_DOMAIN[1]), new Vec2(MAP_DOMAIN[0], MAP_DOMAIN[1])));
     }
     updateSim() {
         /* FOUR DIFF */
@@ -78,8 +83,7 @@ export class Model {
         return new Twist(this.initialPosition.linear.getAdd(robotBaseX.mult(this.position.linear.x).add(robotBaseY.mult(this.position.linear.y))), this.position.angular + this.initialPosition.angular);
     }
     addRandomObstacle() {
-        /* TODO, MAKE IT DEPEND ON THE DOMAIN AND IMAGE OF MAP */
-        this.obstacles.push(new LineObs(Vec2.random(-MAP_DOMAIN, MAP_DOMAIN), Vec2.random(-MAP_DOMAIN, MAP_DOMAIN)));
+        this.obstacles.push(new LineObs(new Vec2(getRandomBound(this.domain.x, this.domain.y), getRandomBound(this.image.x, this.image.y)), new Vec2(getRandomBound(this.domain.x, this.domain.y), getRandomBound(this.image.x, this.image.y))));
     }
     getObstacles() {
         /* TODO, TO SOMETHING ABOUNT NOT RETURNING REFERENCES */

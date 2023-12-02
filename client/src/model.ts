@@ -1,4 +1,4 @@
-import { floateq } from "./common.js";
+import { floateq, getRandomBound } from "./common.js";
 import { ANGLE_VIEW, DEFAULT_OBSTACLE_COUNT, ERROR_DISTANCE, MAP_DOMAIN, NUM_RAYS, dt } from "./constants.js";
 import { Vec2 } from "./vec2.js";
 import { Twist, LidarScan } from "./messages.js"
@@ -58,8 +58,8 @@ class LineObs implements Obstacle {
 /* APP MODEL STATE CLASS */
 export class Model{
     /* MAP STATE */
-    private domain: Vec2 = new Vec2(-MAP_DOMAIN, MAP_DOMAIN);
-    private image: Vec2 = new Vec2(-MAP_DOMAIN, MAP_DOMAIN);
+    private domain: Vec2 = new Vec2(-MAP_DOMAIN[0], MAP_DOMAIN[0]);
+    private image: Vec2 = new Vec2(-MAP_DOMAIN[1], MAP_DOMAIN[1]);
 
     /* ROBOT STATES */
     /* THIS WOULD BE THE ROBOT'S ODOM VALUE */
@@ -74,6 +74,11 @@ export class Model{
 
     constructor(){
         for(let i = 0; i < DEFAULT_OBSTACLE_COUNT; i++) this.addRandomObstacle();
+        /* ADD MAP BOUNDS OBSTACLE */
+        this.obstacles.push(new LineObs(new Vec2(-MAP_DOMAIN[0],  MAP_DOMAIN[1]), new Vec2( MAP_DOMAIN[0],  MAP_DOMAIN[1])));
+        this.obstacles.push(new LineObs(new Vec2(-MAP_DOMAIN[0], -MAP_DOMAIN[1]), new Vec2( MAP_DOMAIN[0], -MAP_DOMAIN[1])));
+        this.obstacles.push(new LineObs(new Vec2(-MAP_DOMAIN[0], -MAP_DOMAIN[1]), new Vec2(-MAP_DOMAIN[0],  MAP_DOMAIN[1])));
+        this.obstacles.push(new LineObs(new Vec2( MAP_DOMAIN[0], -MAP_DOMAIN[1]), new Vec2( MAP_DOMAIN[0],  MAP_DOMAIN[1])));
     }
 
     public updateSim(){
@@ -106,10 +111,9 @@ export class Model{
     }
 
     public addRandomObstacle(){
-        /* TODO, MAKE IT DEPEND ON THE DOMAIN AND IMAGE OF MAP */
         this.obstacles.push(new LineObs(
-            Vec2.random(-MAP_DOMAIN, MAP_DOMAIN),
-            Vec2.random(-MAP_DOMAIN, MAP_DOMAIN)));
+            new Vec2(getRandomBound(this.domain.x, this.domain.y), getRandomBound(this.image.x, this.image.y)),
+            new Vec2(getRandomBound(this.domain.x, this.domain.y), getRandomBound(this.image.x, this.image.y))));
     }
 
     public getObstacles(): Obstacle[] {

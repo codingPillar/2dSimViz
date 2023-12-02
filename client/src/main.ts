@@ -9,9 +9,11 @@ class InputCheckBox{
     private checked = false;
     private callback: (target: InputCheckBox) => void;
 
-    constructor(target: HTMLInputElement, callback = (target: InputCheckBox) => {}){
+    constructor(target: HTMLInputElement, callback = (target: InputCheckBox) => {}, initial: boolean = false){
         this.target = target;
         this.callback = callback;
+        this.checked = initial;
+        this.target.checked = this.checked;
         target.addEventListener('click', (event: MouseEvent) => {
             this.checked = !this.checked;
             this.target.checked = this.checked;
@@ -120,13 +122,13 @@ function main(){
     const inputs: InputCheckBox[] = [
         new InputCheckBox(document.getElementById(SHOW_RAYS_RADIO_ID) as HTMLInputElement, (target: InputCheckBox) => {
             showRays = target.ischecked();
-        }),
+        }, showRays),
         new InputCheckBox(document.getElementById(SHOW_BASE_COORD_RADIO_ID) as HTMLInputElement, (target: InputCheckBox) => {
             showBaseCoord = target.ischecked();
-        }),
+        }, showBaseCoord),
         new InputCheckBox(document.getElementById(SHOW_ROBOT_COORD_RADIO_ID) as HTMLInputElement, (target: InputCheckBox) => {
             showRobotCoord = target.ischecked();
-        })
+        }, showRobotCoord)
     ];
 
     setInterval(() => {
