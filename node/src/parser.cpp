@@ -5,23 +5,33 @@
 #include "parser.h"
 
 #define MAX_FLT_STR_SIZE 64
+#define MAX_KEY_VALUE_BUFFER_SIZE 128
 
 using namespace std;
 
-namespace parsing {
+/* PRIVATE FUNCTIONS */
+static void assignLidarDataField(struct LidarData &data, const char *key, void *value){
+    if(strcmp(key, LIDAR_DATA_MIN_ANGLE_KEY) == 0) data.minAngle = *((float*) value);
+    else if(strcmp(key, LIDAR_DATA_MAX_ANGLE_KEY) == 0) data.maxAngle = *((float*) value);
+    else if(strcmp(key, LIDAR_DATA_ANGLE_STEP_KEY) == 0) data.angleStep = *((float*) value);
+    else if(strcmp(key, LIDAR_DATA_DISTANCES_KEY) == 0) data.distances = *((vector<float>*) value);
+}
 
-bool isFltNumeric(char value){
+static bool isFltNumeric(char value){
     return (value >= '0' && value <= '9') || value == '.';
 }
 
-char whiteChars[] = {' ', '\n', '\r'};
+namespace parsing {
+
+
+static char whiteChars[] = {' ', '\n', '\r'};
 bool isWhiteSpace(char element){
     for(unsigned int i = 0; i < sizeof(whiteChars); i++)
         if(element == whiteChars[i]) return true;
     return false;
 }
 
-vector<float> parseList(const char *buffer, unsigned int length){
+pair<vector<float>, unsigned int> parseList(const char *buffer, unsigned int length){
     std::vector<float> elems;
     unsigned int start = 0;
     bool valueStarted = false;
@@ -52,9 +62,86 @@ vector<float> parseList(const char *buffer, unsigned int length){
             }
             valueStarted = false;
             waitingSeperator = false;
+            if(buffer[i] == ']') return {elems, i};
         }
     }
-    return elems;
+    return {elems, length};
+}
+
+enum PARSE_OBJECT_STATE{
+    WAITING_INIT,
+    READING_KEY,
+    WAITING_KEY_VALUE_SEP,
+    READING_VALUE,
+    WAITING_SEP,
+    DONE
+};
+struct LidarData parseLidarObj(const char *buffer, unsigned int length){
+    struct LidarData data = {};
+    enum PARSE_OBJECT_STATE state = WAITING_INIT;
+    bool reading = false;
+    char keyBuffer[MAX_KEY_VALUE_BUFFER_SIZE] = {0};
+    unsigned int start = 0;
+    for(unsigned int i = 0; i < length; i++){
+        switch (state) {
+            case WAITING_INIT:{
+                if(buffer[i] == '{') state = READING_KEY;
+                else if(isWhiteSpace(buffer[i])) continue;
+                else{
+                    cout << "ERROR WHILE PARSING JSON, FIRST CHAR NOT {" << endl;
+                    return data;
+                }
+            }break;
+            case READING_KEY:{
+                if(isWhiteSpace(buffer[i])) continue;
+                else if(!reading && buffer[i] == '"'){
+                    start = i;
+                    reading = true;
+                }else if(reading && buffer[i] == '"'){
+                    strncpy(keyBuffer, &buffer[start], i - start + 2);
+                    printf("KEY: %s\n", keyBuffer);
+                    state = WAITING_KEY_VALUE_SEP;
+                    reading = false;
+                }
+            }break;
+            case WAITING_KEY_VALUE_SEP:{
+                if(isWhiteSpace(buffer[i])) continue;
+                if(buffer[i] == ':') state = READING_VALUE;
+                else{
+                    cout << "ERROR WHILE PARSING, WAITING FOR : BUT ENCOUTERED " << buffer[i] << endl;
+                    return {};
+                }
+            }break;
+            case READING_VALUE:{
+                /* STRING OR LIST */
+                if(isWhiteSpace(buffer[i])) continue;
+                if(!reading && buffer[i] == '"'){
+                    start = i;
+                    reading = true;
+                }else if(!reading && buffer[i] == '['){
+                    pair<vector<float>, unsigned int> list = parseList(&buffer[i], length - i);
+                    assignLidarDataField(data, keyBuffer, (void*) &list.first);
+                    i += list.second;
+                    state = WAITING_SEP;
+                }else if(reading && buffer[i] == '"' && buffer[start] == '"'){
+                    /* DONE READING STRING */
+                    float value = atof(&buffer[start]);
+                    assignLidarDataField(data, keyBuffer, &value);
+                    printf("KEY: %s, VALUE: %f", keyBuffer, value);
+                    state = WAITING_SEP;
+                }
+            }break;
+            case WAITING_SEP:{
+                if(isWhiteSpace(buffer[i])) continue;
+                else if(buffer[i] == ',') start = READING_KEY;
+                else if(buffer[i] == '}') state = DONE;
+            }break;
+            case DONE:{
+                return data;
+            }break;
+        }
+    }
+    return data;
 }
 
 /* WE ASSUME VALID HTTP REQUEST */
