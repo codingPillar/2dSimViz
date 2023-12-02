@@ -1,11 +1,18 @@
+#include <cstdlib>
 #include <iostream>
 #include <cstring>
 
 #include "parser.h"
 
+#define MAX_FLT_STR_SIZE 64
+
 using namespace std;
 
 namespace parsing {
+
+bool isFltNumeric(char value){
+    return (value >= '0' && value <= '9') || value == '.';
+}
 
 char whiteChars[] = {' ', '\n', '\r'};
 bool isWhiteSpace(char element){
@@ -14,31 +21,44 @@ bool isWhiteSpace(char element){
     return false;
 }
 
-vector<float> parseList(char *buffer, unsigned int length){
+vector<float> parseList(const char *buffer, unsigned int length){
     std::vector<float> elems;
     unsigned int start = 0;
-    bool encouteredChar = false;
+    bool valueStarted = false;
+    bool waitingSeperator = false;
+    char fltBuffer[MAX_FLT_STR_SIZE] = {0};
     for(unsigned int i = 0; i < length; i++){
-        if(isWhiteSpace(buffer[i])) continue;
-        else if(!encouteredChar && buffer[i] != '['){
-            cout << "[ERROR] WRONG FORMAT FOR JSON LIST" << endl;
-            break;
-        }else if(buffer[i] == ','){
-            /* NEW ELEM TO BE PARSED */
-            strtof(buffer, &buffer); 
-        }else{
-            /* START OF NEW ELEM */
+        if(isFltNumeric(buffer[i]) && !valueStarted){
             start = i;
+            valueStarted = true;
+        }else if(isWhiteSpace(buffer[i]) && valueStarted){
+            /* READ VALUE */
+            strncpy(fltBuffer, &buffer[start], i - start + 1);
+            elems.push_back(atof(fltBuffer));
+            valueStarted = false;
+            waitingSeperator = true;
+        }else if(waitingSeperator){
+            /* WAITING FOR NEXT SEPERATOR */
+            if(isWhiteSpace(buffer[i])) continue;
+            else{
+                cout << "WRONG FORMAT FOR LISTS, ENCOUTERED VALUE WHEN WAITONG FOR SEPERATOR" << endl;
+                break;
+            }
+        }else if(buffer[i] == ',' || buffer[i] == ']'){
+            if(valueStarted){
+                /* READ VALUE */
+                strncpy(fltBuffer, &buffer[start], i - start + 1);
+                elems.push_back(atof(fltBuffer));
+            }
+            valueStarted = false;
+            waitingSeperator = false;
         }
-        encouteredChar = true;
     }
-    /* TODO, REMOVE */
-    (void) start;
     return elems;
 }
 
 /* WE ASSUME VALID HTTP REQUEST */
-void parseHttpReq(char *buffer, unsigned int length){
+void parseHttpReq(const char *buffer, unsigned int length){
     /* WE WANT TO LOOK FOR END OF HEADER BY FINDING SEQUENCE \n\r\n\r */
     unsigned int lpointer = 0;
     for(; lpointer < length; lpointer++)

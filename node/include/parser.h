@@ -8,8 +8,8 @@
 namespace parsing {
 
 bool isWhiteSpace(char element);
-std::vector<float> parseList(char *buffer, unsigned int length);
-void parseHttpReq(char *buffer, unsigned int length);
+std::vector<float> parseList(const char *buffer, unsigned int length);
+void parseHttpReq(const char *buffer, unsigned int length);
 
 }
 
