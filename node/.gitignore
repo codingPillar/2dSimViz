@@ -1,2 +1,6 @@
-node
+.cache
 compile
+
+node
+tests
+compile_commands.json
