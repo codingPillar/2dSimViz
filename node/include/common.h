@@ -12,12 +12,18 @@
 #define LIDAR_DATA_ANGLE_STEP_KEY "angleStep"
 #define LIDAR_DATA_DISTANCES_KEY "distances"
 
+#define POST_LIDAR_DATA_ROUTE "/lidarData"
+#define GET_CMD_VEL_VALUES "/cmdVel"
+
 #define EXIT_ERROR 1
 #define SERVER_REQ_BUFFER 10
 #define MAX_BUFFER_SIZE 2048
 
+#define MAX_ROUTE_STR_SIZE 128
 #define HTTP_HEADER_FIELD_DELIM "\r\n"
 #define HTTP_END_HEADER_SEQ "\r\n\r\n"
 #define HTTP_RESPONSE_FORMAT "HTTP/1.1 %u %s"
+#define HTTP_OK_CODE 200
+#define HTTP_ERROR_CODE 404
 
 #endif //COMMON_H

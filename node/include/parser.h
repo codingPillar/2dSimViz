@@ -8,8 +8,6 @@
 #include "common.h"
 #include "messages.h"
 
-#define MAX_ROUTE_STR_SIZE 128
-
 namespace parsing {
 
 enum HTTP_VERB{
