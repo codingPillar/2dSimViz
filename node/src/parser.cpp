@@ -23,7 +23,6 @@ static bool isFltNumeric(char value){
 
 namespace parsing {
 
-
 static char whiteChars[] = {' ', '\n', '\r'};
 bool isWhiteSpace(char element){
     for(unsigned int i = 0; i < sizeof(whiteChars); i++)
@@ -148,17 +147,103 @@ struct LidarData parseLidarObj(const char *buffer, unsigned int length){
     return data;
 }
 
-/* WE ASSUME VALID HTTP REQUEST */
-void parseHttpReq(const char *buffer, unsigned int length){
-    /* WE WANT TO LOOK FOR END OF HEADER BY FINDING SEQUENCE \n\r\n\r */
-    unsigned int lpointer = 0;
-    for(; lpointer < length; lpointer++)
-        if(memcmp(&buffer[lpointer], HTTP_END_HEADER_SEQ, sizeof(HTTP_END_HEADER_SEQ) - 1) == 0) break;
-    /* NOT VALID HTTP STRING */
-    if(lpointer == length) return;
-    lpointer += sizeof(HTTP_END_HEADER_SEQ) - 1;
-    /* LPOINTER IS NOW POINTING TO BODY SECTION, WE ASSUME FOR NOW THAT EVERYTHING IS SENT ON SAME REQUETS */
-    printf("BODY: %s\n", &buffer[lpointer]);
+enum HTTP_REQUEST_PARSE_STATE{
+    PARSING_VERB,
+    PARSING_ROUTE,
+    PARSING_VERSION,
+    PARSING_HEADER_KEY,
+    WAITING_SEPARATOR,
+    PARSING_HEADER_VALUE,
+    PARSING_BODY
+};
+HttpHeader parseHttpReq(const char *buffer, unsigned int length){
+    struct HttpHeader header;
+    enum HTTP_REQUEST_PARSE_STATE state = PARSING_VERB;
+    bool reading = false;
+    unsigned int start = 0;
+    string currentKey;
+    string currentValue;
+    for(unsigned int i = 0; i < length; i++){
+        switch (state) {
+        case PARSING_VERB:{
+            if(!reading && isWhiteSpace(buffer[i])) continue;
+            else if(!reading){
+                reading = true;
+                start = i;
+            }else if(reading && isWhiteSpace(buffer[i])){
+                /* READ VERB */
+                if(strncmp(&buffer[start], "GET", i - start) == 0) header.verb = HTTP_GET;
+                else if(strncmp(&buffer[start], "POST", i - start) == 0) header.verb = HTTP_POST;
+                else{
+                    cout << "UNSUPPORTED HTTP VERB ABORT" << endl;
+                    header.verb = HTTP_NOT_SUPPORTED;
+                    return header;
+                }
+                state = PARSING_ROUTE;
+                reading = false;
+            }
+        }break;
+        case PARSING_ROUTE:{
+            if(!reading && isWhiteSpace(buffer[i])) continue;
+            else if(!reading){
+                reading = true;
+                start = i;
+            }else if(reading && isWhiteSpace(buffer[i])){
+                strncpy(header.route, &buffer[start], i - start);
+                header.route[i - start] = '\0';
+                reading = false;
+                state = PARSING_VERSION;
+            }
+        }break;
+        case PARSING_VERSION:{
+            if(strncmp(&buffer[i], HTTP_HEADER_FIELD_DELIM, sizeof(HTTP_HEADER_FIELD_DELIM) - 1) == 0)
+                state = PARSING_HEADER_KEY;
+        }break;
+        case PARSING_HEADER_KEY:{
+            if(!reading && isWhiteSpace(buffer[i])) continue;
+            if(!reading){
+                start = i;
+                reading = true;
+                currentKey = buffer[i];
+            }
+            else if(reading && buffer[i] == ':'){
+                reading = false;
+                state = PARSING_HEADER_VALUE;
+            }
+            else if(reading && !isWhiteSpace(buffer[i])) currentKey += buffer[i];
+            else if(reading){
+                reading = false;
+                state = WAITING_SEPARATOR;
+            }
+        }break;
+        case WAITING_SEPARATOR:{
+            if(buffer[i] != ':') continue;
+            state = PARSING_HEADER_VALUE;
+        }break;
+        case PARSING_HEADER_VALUE:{
+            if(!reading && isWhiteSpace(buffer[i])) continue;
+            if(!reading){
+                reading = true;
+                start = i;
+                currentValue = buffer[i];
+            }else if(reading && buffer[i] != '\r') currentValue += buffer[i];
+            else{
+                header.values.insert({currentKey, currentValue});
+                reading = false;
+                /* WE ASSUME ANY \r IS FOLLOWED BY \n */
+                if(strncmp(&buffer[i], HTTP_END_HEADER_SEQ, sizeof(HTTP_END_HEADER_SEQ) - 1) == 0) state = PARSING_BODY;
+                else state = PARSING_HEADER_KEY;
+            } 
+        }break;
+        case PARSING_BODY:{
+            if(!reading && isWhiteSpace(buffer[i])) continue;
+            cout << "FOR NOW DONE WITH PARSING HEADER" << endl;
+            header.bodyStartIndex = i;
+            return header;
+        }break;
+        }
+    }
+    return header;
 }
 
 }
