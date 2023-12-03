@@ -20,3 +20,8 @@ export interface LidarScan{
     angleStep: number;
     distances: number[];
 }
+
+export interface CmdVel{
+    linear: number[];
+    angular: number;
+}

@@ -38,3 +38,4 @@ export const ERROR_DISTANCE = -1;
 /* COMMUNICATION WITH ROS NODE RELATED */
 export const SERVER_ADDRESS = "127.0.0.1";
 export const SERVER_PORT = "50601";
+export const SYNCHRONIZE_ROUTE = "sync";

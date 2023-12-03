@@ -1,6 +1,7 @@
-import {BUTTON_ID, CANVAS_HEIGHT, CANVAS_TO_MAP_FACTOR, CANVAS_WIDTH, EPOCH, EPSILON, FPS, MAIN_SYSTEM_ARROW_LENGTH, MAP_CANVAS_ID, OUTPUT_MAP_CANVAS_ID, POSITON_INDICATOR_ID, ROBOT_BOX_SIZE, ROBOT_SYSTEM_ARROW_LENGTH, SECOND_MS, SHOW_BASE_COORD_RADIO_ID, SHOW_RAYS_RADIO_ID, SHOW_ROBOT_COORD_RADIO_ID, SHOW_ROBOT_DIRECTION_RADIO_ID, SHOW_ROBOT_POSITION_RADIO_ID, TIME_INDICATOR_ID, XINPUT_ID, YINPUT_ID, ZINPUT_ID} from "./constants.js"
+import { Communication } from "./communication.js";
+import {BUTTON_ID, CANVAS_HEIGHT, CANVAS_TO_MAP_FACTOR, CANVAS_WIDTH, EPOCH, EPSILON, FPS, MAIN_SYSTEM_ARROW_LENGTH, MAP_CANVAS_ID, OUTPUT_MAP_CANVAS_ID, POSITON_INDICATOR_ID, ROBOT_BOX_SIZE, ROBOT_SYSTEM_ARROW_LENGTH, SECOND_MS, SERVER_ADDRESS, SERVER_PORT, SHOW_BASE_COORD_RADIO_ID, SHOW_RAYS_RADIO_ID, SHOW_ROBOT_COORD_RADIO_ID, SHOW_ROBOT_DIRECTION_RADIO_ID, SHOW_ROBOT_POSITION_RADIO_ID, SYNCHRONIZE_ROUTE, TIME_INDICATOR_ID, XINPUT_ID, YINPUT_ID, ZINPUT_ID} from "./constants.js"
 import { DrawManager } from "./drawManager.js";
-import { Twist } from "./messages.js";
+import { CmdVel, Twist } from "./messages.js";
 import { Model } from "./model.js";
 import { Vec2 } from "./vec2.js";
 
@@ -22,6 +23,17 @@ class InputCheckBox{
     }
 
     public ischecked() { return this.checked }
+}
+
+async function waitForServer(communicationService: Communication){
+    let connected = false;
+    while(!connected){
+        try{
+            await communicationService.get<{}>(SYNCHRONIZE_ROUTE);
+        }catch {
+            await new Promise(r => setTimeout(r, 2000));
+        }
+    }
 }
 
 function drawRobotPositionInFrame(canvasManager: DrawManager, position: Twist): Vec2{
@@ -85,7 +97,7 @@ function updateMapOutput(model: Model, canvasManager: DrawManager){
     }
 }
 
-function main(){
+async function main(){
     console.log("HOLLA");
 
     const formButton = document.getElementById(BUTTON_ID) as HTMLButtonElement; 
@@ -141,7 +153,11 @@ function main(){
         }, showRobotDirection)
     ];
 
-    setInterval(() => {
+    const communitionService: Communication = new Communication(SERVER_ADDRESS, SERVER_PORT);
+    /* WAIT FOR SERVER CONNEXION */
+    await waitForServer(communitionService);
+
+    setInterval(async () => {
         canvasManager.clearDisplay();
 
         /* DRAW BASIC COORD SYSTEM ARROWS */
@@ -196,7 +212,8 @@ function main(){
         /* TODO, IMPLEMENT */
 
         /* RECEIVE NEW COMMAND_VEL */
-        //model.updateVel(30, 10);
+        const cmdVelReq = await communitionService.get<CmdVel>('');
+        model.updateVel(cmdVelReq.linear[0], cmdVelReq.angular);
 
     }, SECOND_MS / FPS );
 }
