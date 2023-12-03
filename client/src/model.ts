@@ -86,6 +86,7 @@ export class Model{
         const displacement = Vec2.fromAngle(this.odom.angular).mult(this.velocity.linear.x * dt);
         this.odom.linear.add(displacement);
         this.odom.angular += this.velocity.angular * dt;
+        /* TODO, MAKE SURE ODOM RANGE IS BETWEEN -PI, PI */
     }
 
     /* TODO, UPDATE WHEN WE WANT TO ADD NEW MODES OF MOUVEMENT */

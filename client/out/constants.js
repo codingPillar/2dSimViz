@@ -11,6 +11,7 @@ export const OUTPUT_MAP_CANVAS_ID = "outputMapCanvas";
 export const SHOW_RAYS_RADIO_ID = "showRaysRadioInput";
 export const SHOW_BASE_COORD_RADIO_ID = "showBaseCoordInput";
 export const SHOW_ROBOT_COORD_RADIO_ID = "showRobotCoordInput";
+export const SHOW_ROBOT_POSITION_RADIO_ID = "showRobotPositionInput";
 /* DRAWING RELATED */
 export const ROBOT_BOX_SIZE = 20;
 export const MAIN_SYSTEM_ARROW_LENGTH = 100;

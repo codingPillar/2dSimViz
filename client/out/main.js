@@ -1,4 +1,4 @@
-import { BUTTON_ID, CANVAS_HEIGHT, CANVAS_WIDTH, EPOCH, EPSILON, FPS, MAIN_SYSTEM_ARROW_LENGTH, MAP_CANVAS_ID, OUTPUT_MAP_CANVAS_ID, POSITON_INDICATOR_ID, ROBOT_BOX_SIZE, ROBOT_SYSTEM_ARROW_LENGTH, SECOND_MS, SHOW_BASE_COORD_RADIO_ID, SHOW_RAYS_RADIO_ID, SHOW_ROBOT_COORD_RADIO_ID, XINPUT_ID, YINPUT_ID, ZINPUT_ID } from "./constants.js";
+import { BUTTON_ID, CANVAS_HEIGHT, CANVAS_TO_MAP_FACTOR, CANVAS_WIDTH, EPOCH, EPSILON, FPS, MAIN_SYSTEM_ARROW_LENGTH, MAP_CANVAS_ID, OUTPUT_MAP_CANVAS_ID, POSITON_INDICATOR_ID, ROBOT_BOX_SIZE, ROBOT_SYSTEM_ARROW_LENGTH, SECOND_MS, SHOW_BASE_COORD_RADIO_ID, SHOW_RAYS_RADIO_ID, SHOW_ROBOT_COORD_RADIO_ID, SHOW_ROBOT_POSITION_RADIO_ID, XINPUT_ID, YINPUT_ID, ZINPUT_ID } from "./constants.js";
 import { DrawManager } from "./drawManager.js";
 import { Model } from "./model.js";
 import { Vec2 } from "./vec2.js";
@@ -35,6 +35,7 @@ function drawRobotPositionInFrame(canvasManager, position) {
     const robotOrthogonalBaseX = Vec2.fromAngle(orientation).mult(k1);
     canvasManager.drawArrow(new Vec2(), orientation, k1, '#00ff00');
     canvasManager.drawArrow(robotOrthogonalBaseX, orientation + Math.PI / 2, k2, '#00ff00');
+    return robotOrthogonalBaseX.add(Vec2.fromAngle(orientation + Math.PI / 2).mult(k2));
 }
 function drawObstacles(model, canvasManager) {
     const obstacles = model.getObstacles();
@@ -100,7 +101,8 @@ function main() {
     });
     let showRays = false;
     let showBaseCoord = true;
-    let showRobotCoord = false;
+    let showRobotCoordSystem = false;
+    let showRobotPosition = false;
     const inputs = [
         new InputCheckBox(document.getElementById(SHOW_RAYS_RADIO_ID), (target) => {
             showRays = target.ischecked();
@@ -109,15 +111,18 @@ function main() {
             showBaseCoord = target.ischecked();
         }, showBaseCoord),
         new InputCheckBox(document.getElementById(SHOW_ROBOT_COORD_RADIO_ID), (target) => {
-            showRobotCoord = target.ischecked();
-        }, showRobotCoord)
+            showRobotCoordSystem = target.ischecked();
+        }, showRobotCoordSystem),
+        new InputCheckBox(document.getElementById(SHOW_ROBOT_POSITION_RADIO_ID), (target) => {
+            showRobotPosition = target.ischecked();
+        }, showRobotPosition)
     ];
     setInterval(() => {
         canvasManager.clearDisplay();
         /* DRAW BASIC COORD SYSTEM ARROWS */
         if (showBaseCoord) {
-            canvasManager.drawArrow(new Vec2(), 0, MAIN_SYSTEM_ARROW_LENGTH);
-            canvasManager.drawArrow(new Vec2(), Math.PI / 2, MAIN_SYSTEM_ARROW_LENGTH);
+            canvasManager.drawArrow(new Vec2(), 0, MAIN_SYSTEM_ARROW_LENGTH / CANVAS_TO_MAP_FACTOR);
+            canvasManager.drawArrow(new Vec2(), Math.PI / 2, MAIN_SYSTEM_ARROW_LENGTH / CANVAS_TO_MAP_FACTOR);
         }
         /* SET UP ROBOT IN MAP COORDINATE SYSTEM */
         const robotOdomPosition = model.getOdomPosition(); /* IN ROBOT SPACE */
@@ -127,12 +132,18 @@ function main() {
         canvasManager.getContext().fillStyle = '#000000';
         const canvasPosition = canvasManager.transformToCanvasCoord(robotPosition.linear);
         canvasManager.getContext().fillRect(canvasPosition.x - ROBOT_BOX_SIZE / 2, canvasPosition.y - ROBOT_BOX_SIZE / 2, ROBOT_BOX_SIZE, ROBOT_BOX_SIZE);
-        if (showRobotCoord) {
-            canvasManager.drawArrow(robotPosition.linear, robotPosition.angular, ROBOT_SYSTEM_ARROW_LENGTH, '#ff0000');
-            canvasManager.drawArrow(robotPosition.linear, robotPosition.angular + Math.PI / 2, ROBOT_SYSTEM_ARROW_LENGTH, '#ff0000');
+        if (showRobotCoordSystem) {
+            canvasManager.drawArrow(robotPosition.linear, robotInitialPosition.angular, ROBOT_SYSTEM_ARROW_LENGTH / CANVAS_TO_MAP_FACTOR, '#ff0000');
+            canvasManager.drawArrow(robotPosition.linear, robotInitialPosition.angular + Math.PI / 2, ROBOT_SYSTEM_ARROW_LENGTH / CANVAS_TO_MAP_FACTOR, '#ff0000');
         }
         positionIdicator.innerHTML = `Current position = {x : ${robotPosition.linear.x}, y: ${robotPosition.linear.y}}`;
-        drawRobotPositionInFrame(canvasManager, robotPosition);
+        if (showRobotPosition) {
+            /* DRAW INITIAL POSITION */
+            const endPoint = drawRobotPositionInFrame(canvasManager, robotInitialPosition);
+            /* DRAW THE ODOM COMPONENT */
+            canvasManager.drawArrow(endPoint, robotInitialPosition.angular, robotOdomPosition.linear.x, '#ffff00');
+            canvasManager.drawArrow(endPoint.getAdd(Vec2.fromAngle(robotInitialPosition.angular).mult(robotOdomPosition.linear.x)), robotInitialPosition.angular + Math.PI / 2, robotOdomPosition.linear.y, '#ffff00');
+        }
         /* DRAW OBSTACLES */
         drawObstacles(model, canvasManager);
         /* DRAW LIDAR RAYS */
@@ -147,7 +158,7 @@ function main() {
         /* SEND TO BASE NODE SENSOR DATA */
         /* TODO, IMPLEMENT */
         /* RECEIVE NEW COMMAND_VEL */
-        //model.updateVel(10, 0);
+        model.updateVel(10, 10);
     }, SECOND_MS / FPS);
 }
 main();
