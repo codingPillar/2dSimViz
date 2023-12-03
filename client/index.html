@@ -12,10 +12,12 @@
                     <label class="singleInputContainer">BASE COOR SYS:<input id="showBaseCoordInput" type="radio"></label>
                     <label class="singleInputContainer">ROBOT COOR SYS:<input id="showRobotCoordInput" type="radio"></label>
                     <label class="singleInputContainer">ROBOT POSITION DECOMPOSITION:<input id="showRobotPositionInput" type="radio"></label>
+                    <label class="singleInputContainer">ROBOT DIRECTION:<input id="showRobotDirectionInput" type="radio"></label>
                 </div>
                 <canvas id="mapCanvas"></canvas>
                 <canvas id="outputMapCanvas"></canvas>
                 <form id="inputContainer">
+                    <div>SET INITIAL POSITION</div>
                     <label>x: <input id="xinput" value="0" type="number"></label>
                     <label>y: <input id="yinput" value="0" type="number"></label> 
                     <label>z: <input id="zinput" value="0" type="number"></label>
@@ -23,6 +25,7 @@
                 </form>
             </div>
             <div id="positionIndicator">Current position = {x : 0, y: 0}</div>
+            <div id="timeIndicator">Time Elapsed: 0 sec</div>
         </div>
     </body>
     <script type="module" src="./out/main.js"></script>

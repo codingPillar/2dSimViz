@@ -69,6 +69,9 @@ export class Model{
     /* IN MAP COORDINATE SYSTEM */
     private initialPosition: Twist = new Twist();
 
+    /* SIMULATION STATES */
+    private time: number = 0;
+
     /* OBSTACLES */
     private obstacles: Obstacle[] = [];
 
@@ -86,7 +89,12 @@ export class Model{
         const displacement = Vec2.fromAngle(this.odom.angular).mult(this.velocity.linear.x * dt);
         this.odom.linear.add(displacement);
         this.odom.angular += this.velocity.angular * dt;
+        this.time += dt;
         /* TODO, MAKE SURE ODOM RANGE IS BETWEEN -PI, PI */
+    }
+
+    public getTime(){
+        return this.time;
     }
 
     /* TODO, UPDATE WHEN WE WANT TO ADD NEW MODES OF MOUVEMENT */

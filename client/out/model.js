@@ -50,6 +50,8 @@ export class Model {
         this.velocity = new Twist();
         /* IN MAP COORDINATE SYSTEM */
         this.initialPosition = new Twist();
+        /* SIMULATION STATES */
+        this.time = 0;
         /* OBSTACLES */
         this.obstacles = [];
         for (let i = 0; i < DEFAULT_OBSTACLE_COUNT; i++)
@@ -65,7 +67,11 @@ export class Model {
         const displacement = Vec2.fromAngle(this.odom.angular).mult(this.velocity.linear.x * dt);
         this.odom.linear.add(displacement);
         this.odom.angular += this.velocity.angular * dt;
+        this.time += dt;
         /* TODO, MAKE SURE ODOM RANGE IS BETWEEN -PI, PI */
+    }
+    getTime() {
+        return this.time;
     }
     /* TODO, UPDATE WHEN WE WANT TO ADD NEW MODES OF MOUVEMENT */
     updateVel(linear, angular) {

@@ -1,4 +1,4 @@
-import { BUTTON_ID, CANVAS_HEIGHT, CANVAS_TO_MAP_FACTOR, CANVAS_WIDTH, EPOCH, EPSILON, FPS, MAIN_SYSTEM_ARROW_LENGTH, MAP_CANVAS_ID, OUTPUT_MAP_CANVAS_ID, POSITON_INDICATOR_ID, ROBOT_BOX_SIZE, ROBOT_SYSTEM_ARROW_LENGTH, SECOND_MS, SHOW_BASE_COORD_RADIO_ID, SHOW_RAYS_RADIO_ID, SHOW_ROBOT_COORD_RADIO_ID, SHOW_ROBOT_POSITION_RADIO_ID, XINPUT_ID, YINPUT_ID, ZINPUT_ID } from "./constants.js";
+import { BUTTON_ID, CANVAS_HEIGHT, CANVAS_TO_MAP_FACTOR, CANVAS_WIDTH, EPOCH, EPSILON, FPS, MAIN_SYSTEM_ARROW_LENGTH, MAP_CANVAS_ID, OUTPUT_MAP_CANVAS_ID, POSITON_INDICATOR_ID, ROBOT_BOX_SIZE, ROBOT_SYSTEM_ARROW_LENGTH, SECOND_MS, SHOW_BASE_COORD_RADIO_ID, SHOW_RAYS_RADIO_ID, SHOW_ROBOT_COORD_RADIO_ID, SHOW_ROBOT_DIRECTION_RADIO_ID, SHOW_ROBOT_POSITION_RADIO_ID, TIME_INDICATOR_ID, XINPUT_ID, YINPUT_ID, ZINPUT_ID } from "./constants.js";
 import { DrawManager } from "./drawManager.js";
 import { Model } from "./model.js";
 import { Vec2 } from "./vec2.js";
@@ -84,6 +84,7 @@ function main() {
     const yinput = document.getElementById(YINPUT_ID);
     const zinput = document.getElementById(ZINPUT_ID);
     const positionIdicator = document.getElementById(POSITON_INDICATOR_ID);
+    const timeIdicator = document.getElementById(TIME_INDICATOR_ID);
     const outputMapCanvas = document.getElementById(OUTPUT_MAP_CANVAS_ID);
     mapCanvas.setAttribute("width", CANVAS_WIDTH.toString());
     mapCanvas.setAttribute("height", CANVAS_HEIGHT.toString());
@@ -103,6 +104,7 @@ function main() {
     let showBaseCoord = true;
     let showRobotCoordSystem = false;
     let showRobotPosition = false;
+    let showRobotDirection = true;
     const inputs = [
         new InputCheckBox(document.getElementById(SHOW_RAYS_RADIO_ID), (target) => {
             showRays = target.ischecked();
@@ -115,7 +117,10 @@ function main() {
         }, showRobotCoordSystem),
         new InputCheckBox(document.getElementById(SHOW_ROBOT_POSITION_RADIO_ID), (target) => {
             showRobotPosition = target.ischecked();
-        }, showRobotPosition)
+        }, showRobotPosition),
+        new InputCheckBox(document.getElementById(SHOW_ROBOT_DIRECTION_RADIO_ID), (target) => {
+            showRobotDirection = target.ischecked();
+        }, showRobotDirection)
     ];
     setInterval(() => {
         canvasManager.clearDisplay();
@@ -136,7 +141,6 @@ function main() {
             canvasManager.drawArrow(robotPosition.linear, robotInitialPosition.angular, ROBOT_SYSTEM_ARROW_LENGTH / CANVAS_TO_MAP_FACTOR, '#ff0000');
             canvasManager.drawArrow(robotPosition.linear, robotInitialPosition.angular + Math.PI / 2, ROBOT_SYSTEM_ARROW_LENGTH / CANVAS_TO_MAP_FACTOR, '#ff0000');
         }
-        positionIdicator.innerHTML = `Current position = {x : ${robotPosition.linear.x}, y: ${robotPosition.linear.y}}`;
         if (showRobotPosition) {
             /* DRAW INITIAL POSITION */
             const endPoint = drawRobotPositionInFrame(canvasManager, robotInitialPosition);
@@ -144,6 +148,12 @@ function main() {
             canvasManager.drawArrow(endPoint, robotInitialPosition.angular, robotOdomPosition.linear.x, '#ffff00');
             canvasManager.drawArrow(endPoint.getAdd(Vec2.fromAngle(robotInitialPosition.angular).mult(robotOdomPosition.linear.x)), robotInitialPosition.angular + Math.PI / 2, robotOdomPosition.linear.y, '#ffff00');
         }
+        if (showRobotDirection) {
+            /* DRAW ROBOT DIRECTION */
+            canvasManager.drawArrow(robotPosition.linear, robotPosition.angular, ROBOT_SYSTEM_ARROW_LENGTH / CANVAS_TO_MAP_FACTOR, '#00ffff');
+        }
+        positionIdicator.innerHTML = `Current position = {x : ${robotPosition.linear.x.toFixed(2)}, y: ${robotPosition.linear.y.toFixed(2)}}`;
+        timeIdicator.innerHTML = `Current Elapsed Time: ${model.getTime().toFixed(2)} seconds`;
         /* DRAW OBSTACLES */
         drawObstacles(model, canvasManager);
         /* DRAW LIDAR RAYS */
@@ -158,7 +168,7 @@ function main() {
         /* SEND TO BASE NODE SENSOR DATA */
         /* TODO, IMPLEMENT */
         /* RECEIVE NEW COMMAND_VEL */
-        model.updateVel(10, 10);
+        //model.updateVel(30, 10);
     }, SECOND_MS / FPS);
 }
 main();

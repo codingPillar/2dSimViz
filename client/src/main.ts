@@ -1,4 +1,4 @@
-import {BUTTON_ID, CANVAS_HEIGHT, CANVAS_TO_MAP_FACTOR, CANVAS_WIDTH, EPOCH, EPSILON, FPS, MAIN_SYSTEM_ARROW_LENGTH, MAP_CANVAS_ID, OUTPUT_MAP_CANVAS_ID, POSITON_INDICATOR_ID, ROBOT_BOX_SIZE, ROBOT_SYSTEM_ARROW_LENGTH, SECOND_MS, SHOW_BASE_COORD_RADIO_ID, SHOW_RAYS_RADIO_ID, SHOW_ROBOT_COORD_RADIO_ID, SHOW_ROBOT_POSITION_RADIO_ID, XINPUT_ID, YINPUT_ID, ZINPUT_ID} from "./constants.js"
+import {BUTTON_ID, CANVAS_HEIGHT, CANVAS_TO_MAP_FACTOR, CANVAS_WIDTH, EPOCH, EPSILON, FPS, MAIN_SYSTEM_ARROW_LENGTH, MAP_CANVAS_ID, OUTPUT_MAP_CANVAS_ID, POSITON_INDICATOR_ID, ROBOT_BOX_SIZE, ROBOT_SYSTEM_ARROW_LENGTH, SECOND_MS, SHOW_BASE_COORD_RADIO_ID, SHOW_RAYS_RADIO_ID, SHOW_ROBOT_COORD_RADIO_ID, SHOW_ROBOT_DIRECTION_RADIO_ID, SHOW_ROBOT_POSITION_RADIO_ID, TIME_INDICATOR_ID, XINPUT_ID, YINPUT_ID, ZINPUT_ID} from "./constants.js"
 import { DrawManager } from "./drawManager.js";
 import { Twist } from "./messages.js";
 import { Model } from "./model.js";
@@ -94,6 +94,7 @@ function main(){
     const yinput = document.getElementById(YINPUT_ID) as HTMLInputElement;
     const zinput = document.getElementById(ZINPUT_ID) as HTMLInputElement;
     const positionIdicator = document.getElementById(POSITON_INDICATOR_ID) as HTMLDivElement;
+    const timeIdicator = document.getElementById(TIME_INDICATOR_ID) as HTMLDivElement;
     const outputMapCanvas = document.getElementById(OUTPUT_MAP_CANVAS_ID) as HTMLCanvasElement;
     
     mapCanvas.setAttribute("width", CANVAS_WIDTH.toString());
@@ -121,6 +122,7 @@ function main(){
     let showBaseCoord = true;
     let showRobotCoordSystem = false;
     let showRobotPosition = false;
+    let showRobotDirection = true;
     const inputs: InputCheckBox[] = [
         new InputCheckBox(document.getElementById(SHOW_RAYS_RADIO_ID) as HTMLInputElement, (target: InputCheckBox) => {
             showRays = target.ischecked();
@@ -133,7 +135,10 @@ function main(){
         }, showRobotCoordSystem),
         new InputCheckBox(document.getElementById(SHOW_ROBOT_POSITION_RADIO_ID) as HTMLInputElement, (target: InputCheckBox) => {
             showRobotPosition = target.ischecked();
-        }, showRobotPosition)
+        }, showRobotPosition),
+        new InputCheckBox(document.getElementById(SHOW_ROBOT_DIRECTION_RADIO_ID) as HTMLInputElement, (target: InputCheckBox) => {
+            showRobotDirection = target.ischecked();
+        }, showRobotDirection)
     ];
 
     setInterval(() => {
@@ -158,16 +163,20 @@ function main(){
             canvasManager.drawArrow(robotPosition.linear, robotInitialPosition.angular, ROBOT_SYSTEM_ARROW_LENGTH / CANVAS_TO_MAP_FACTOR, '#ff0000');
             canvasManager.drawArrow(robotPosition.linear, robotInitialPosition.angular + Math.PI / 2, ROBOT_SYSTEM_ARROW_LENGTH / CANVAS_TO_MAP_FACTOR, '#ff0000');
         }
-        positionIdicator.innerHTML = `Current position = {x : ${robotPosition.linear.x}, y: ${robotPosition.linear.y}}`;
-    
         if(showRobotPosition){
             /* DRAW INITIAL POSITION */
             const endPoint: Vec2 = drawRobotPositionInFrame(canvasManager, robotInitialPosition);
             /* DRAW THE ODOM COMPONENT */
             canvasManager.drawArrow(endPoint, robotInitialPosition.angular, robotOdomPosition.linear.x, '#ffff00');
             canvasManager.drawArrow(endPoint.getAdd(Vec2.fromAngle(robotInitialPosition.angular).mult(robotOdomPosition.linear.x)),
-                 robotInitialPosition.angular + Math.PI / 2, robotOdomPosition.linear.y, '#ffff00');
+            robotInitialPosition.angular + Math.PI / 2, robotOdomPosition.linear.y, '#ffff00');
         }
+        if(showRobotDirection){
+            /* DRAW ROBOT DIRECTION */
+            canvasManager.drawArrow(robotPosition.linear, robotPosition.angular, ROBOT_SYSTEM_ARROW_LENGTH / CANVAS_TO_MAP_FACTOR, '#00ffff');
+        }
+        positionIdicator.innerHTML = `Current position = {x : ${robotPosition.linear.x.toFixed(2)}, y: ${robotPosition.linear.y.toFixed(2)}}`;
+        timeIdicator.innerHTML = `Current Elapsed Time: ${model.getTime().toFixed(2)} seconds`
 
         /* DRAW OBSTACLES */
         drawObstacles(model, canvasManager);
@@ -187,7 +196,7 @@ function main(){
         /* TODO, IMPLEMENT */
 
         /* RECEIVE NEW COMMAND_VEL */
-        model.updateVel(10, 10);
+        //model.updateVel(30, 10);
 
     }, SECOND_MS / FPS );
 }
