@@ -18,7 +18,7 @@ static void assignLidarDataField(struct LidarData &data, const char *key, void *
 }
 
 static bool isFltNumeric(char value){
-    return (value >= '0' && value <= '9') || value == '.';
+    return (value >= '0' && value <= '9') || value == '.' || value== '-';
 }
 
 namespace parsing {
@@ -99,6 +99,7 @@ struct LidarData parseLidarObj(const char *buffer, unsigned int length){
                     reading = true;
                 }else if(reading && buffer[i] == '"'){
                     strncpy(keyBuffer, &buffer[start + 1], i - start - 1);
+                    keyBuffer[i - start - 1] = '\0';
                     state = WAITING_KEY_VALUE_SEP;
                     reading = false;
                 }
@@ -112,9 +113,9 @@ struct LidarData parseLidarObj(const char *buffer, unsigned int length){
                 }
             }break;
             case READING_VALUE:{
-                /* STRING OR LIST */
-                if(isWhiteSpace(buffer[i])) continue;
-                if(!reading && buffer[i] == '"'){
+                /* FLOAT OR LIST */
+                if(!reading && isWhiteSpace(buffer[i])) continue;
+                if(!reading && isFltNumeric(buffer[i])){
                     start = i;
                     reading = true;
                 }else if(!reading && buffer[i] == '['){
@@ -122,11 +123,15 @@ struct LidarData parseLidarObj(const char *buffer, unsigned int length){
                     assignLidarDataField(data, keyBuffer, (void*) &list.first);
                     i += list.second;
                     state = WAITING_SEP;
-                }else if(reading && buffer[i] == '"' && buffer[start] == '"'){
-                    /* DONE READING STRING */
-                    float value = atof(&buffer[start + 1]);
-                    assignLidarDataField(data, keyBuffer, &value);
-                    state = WAITING_SEP;
+                    reading = false;
+                }else if(reading && (isWhiteSpace(buffer[i]) || buffer[i] == ',' || buffer[i] == '}')){
+                    /* DONE READING FLT */
+                    float value = atof(&buffer[start]);
+                    assignLidarDataField(data, keyBuffer, (void*)&value);
+                    reading = false;
+                    if(isWhiteSpace(buffer[i])) state = WAITING_SEP;
+                    else if(buffer[i] == ',') state = READING_KEY;
+                    else state = DONE;
                 }
             }break;
             case WAITING_SEP:{

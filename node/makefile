@@ -15,9 +15,9 @@ TEST_OBJ_COMP:=$(TEST_SRC:$(TEST_FOLDER)/%.cpp=$(OUT_FOLDER)/%.cpp.comp)
 SRC_COMP_OBJ+=$(TEST_OBJ_COMP)
 
 CXX:=g++
-CXX_INCLUDE:=-I./include
+CXX_INCLUDE:=-I./include -I/opt/ros/noetic/include
 CXX_FLAGS:=-Wall -Wextra
-CXX_LINK_FLAGS:=
+CXX_LINK_FLAGS:=-L/opt/ros/noetic/lib -L/main/bin/ -lpthread -lroscpp -lrosconsole -lroscpp_serialization -lrostime
 
 OUT_FILE:=node
 
@@ -51,6 +51,9 @@ $(OUT_FOLDER)/%.comp:$(TEST_FOLDER)/%
 	$(shell $(COMPILE_COMMAND_EXEC) $(COMPILE_COMMANDS_FILE) $(PWD) "$(COMPILE) -DTEST_EXEC" $<)
 commands: $(SRC_COMP_OBJ)
 	$(shell $(COMPILE_COMMAND_EXEC) $(COMPILE_COMMANDS_FILE) --end)
+
+start: $(OUT_FILE)
+	./$(OUT_FILE) 50101
 
 clean:
 	rm -rf $(OUT_FOLDER)/*

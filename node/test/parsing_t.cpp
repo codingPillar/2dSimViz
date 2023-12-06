@@ -15,8 +15,9 @@ TEST(MESSAGE_PARSING, lists){
 }
 
 TEST(MESSAGE_PARSING, lidarDataObj){
-    char buffer[] =  "{\"minAngle\": \"-1.0\", \"maxAngle\": \"1.0\", \"angleStep\": \"0.001\", \"distances\":[10,9,7]}";
+    char buffer[] =  "{\"minAngle\": -1.0, \"maxAngle\": 1.0, \"angleStep\": 0.001, \"distances\":[10,9,7]}";
     struct LidarData data = parseLidarObj(buffer, sizeof(buffer) - 1);
+    cout << "min: " << data.maxAngle << " max: " << data.maxAngle << " step: " << data.angleStep << endl; 
     EXPECT_TRUE(flteq(data.minAngle, -1.0F));
     EXPECT_TRUE(flteq(data.maxAngle, 1.0F));
     EXPECT_TRUE(flteq(data.angleStep, 0.001F));

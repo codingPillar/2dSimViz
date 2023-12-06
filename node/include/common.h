@@ -13,7 +13,8 @@
 #define LIDAR_DATA_DISTANCES_KEY "distances"
 
 #define POST_LIDAR_DATA_ROUTE "/lidarData"
-#define GET_CMD_VEL_VALUES "/cmdVel"
+#define GET_CMD_VEL_ROUTE "/cmdVel"
+#define GET_SYNC_ROUTE "/sync"
 
 #define EXIT_ERROR 1
 #define SERVER_REQ_BUFFER 10
