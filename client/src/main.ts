@@ -30,6 +30,7 @@ async function waitForServer(communicationService: Communication){
     while(!connected){
         try{
             await communicationService.get<{}>(SYNCHRONIZE_ROUTE);
+            connected = true;
         }catch {
             await new Promise(r => setTimeout(r, 2000));
         }

@@ -33,6 +33,7 @@ function waitForServer(communicationService) {
         while (!connected) {
             try {
                 yield communicationService.get(SYNCHRONIZE_ROUTE);
+                connected = true;
             }
             catch (_a) {
                 yield new Promise(r => setTimeout(r, 2000));

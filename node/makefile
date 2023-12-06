@@ -53,7 +53,7 @@ commands: $(SRC_COMP_OBJ)
 	$(shell $(COMPILE_COMMAND_EXEC) $(COMPILE_COMMANDS_FILE) --end)
 
 start: $(OUT_FILE)
-	./$(OUT_FILE) 50101
+	./$(OUT_FILE) 50601
 
 clean:
 	rm -rf $(OUT_FOLDER)/*
