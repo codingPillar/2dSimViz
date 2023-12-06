@@ -12,9 +12,6 @@ export class Communication{
     }
 
     public async post<Request, Response>(route: string, body: Request): Promise<Response>{
-        /* TODO IMPLEMENT */
-        return (await new Promise((resolve, reject) => {
-            resolve({} as Response);
-        })) as Response;
+        return await (await fetch(`http://${this.address}:${this.port}/${route}`, {method: "POST", body: JSON.stringify(body)})).json() as Response;
     }
 }

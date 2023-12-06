@@ -1,7 +1,7 @@
 import { Communication } from "./communication.js";
-import {BUTTON_ID, CANVAS_HEIGHT, CANVAS_TO_MAP_FACTOR, CANVAS_WIDTH, EPOCH, EPSILON, FPS, MAIN_SYSTEM_ARROW_LENGTH, MAP_CANVAS_ID, OUTPUT_MAP_CANVAS_ID, POSITON_INDICATOR_ID, ROBOT_BOX_SIZE, ROBOT_SYSTEM_ARROW_LENGTH, SECOND_MS, SERVER_ADDRESS, SERVER_PORT, SHOW_BASE_COORD_RADIO_ID, SHOW_RAYS_RADIO_ID, SHOW_ROBOT_COORD_RADIO_ID, SHOW_ROBOT_DIRECTION_RADIO_ID, SHOW_ROBOT_POSITION_RADIO_ID, SYNCHRONIZE_ROUTE, TIME_INDICATOR_ID, XINPUT_ID, YINPUT_ID, ZINPUT_ID} from "./constants.js"
+import {BUTTON_ID, CANVAS_HEIGHT, CANVAS_TO_MAP_FACTOR, CANVAS_WIDTH, EPOCH, EPSILON, FPS, GET_CMD_VEL_ROUTE, MAIN_SYSTEM_ARROW_LENGTH, MAP_CANVAS_ID, OUTPUT_MAP_CANVAS_ID, POSITON_INDICATOR_ID, POST_LIDAR_DATA_ROUTE, ROBOT_BOX_SIZE, ROBOT_SYSTEM_ARROW_LENGTH, SECOND_MS, SERVER_ADDRESS, SERVER_PORT, SHOW_BASE_COORD_RADIO_ID, SHOW_RAYS_RADIO_ID, SHOW_ROBOT_COORD_RADIO_ID, SHOW_ROBOT_DIRECTION_RADIO_ID, SHOW_ROBOT_POSITION_RADIO_ID, SYNCHRONIZE_ROUTE, TIME_INDICATOR_ID, XINPUT_ID, YINPUT_ID, ZINPUT_ID} from "./constants.js"
 import { DrawManager } from "./drawManager.js";
-import { CmdVel, Twist } from "./messages.js";
+import { CmdVel, LidarScan, Twist } from "./messages.js";
 import { Model } from "./model.js";
 import { Vec2 } from "./vec2.js";
 
@@ -75,13 +75,11 @@ function drawObstacles(model: Model, canvasManager: DrawManager){
     }
 }
 
-function drawRays(model: Model, canvasManager: DrawManager){
-    const data = model.getLidarData();
-    const position = model.getWorldPosition();
-    for(let i = 0; i < data.distances.length; i++){
-        if(data.distances[i] < 0) continue;
-        const deltaAngle = data.minAngle + i * data.angleStep;
-        canvasManager.drawArrow(position.linear, position.angular + deltaAngle, data.distances[i], '#0000ff');
+function drawRays(lidarScan: LidarScan, worldPosition: Twist, canvasManager: DrawManager){
+    for(let i = 0; i < lidarScan.distances.length; i++){
+        if(lidarScan.distances[i] < 0) continue;
+        const deltaAngle = lidarScan.minAngle + i * lidarScan.angleStep;
+        canvasManager.drawArrow(worldPosition.linear, worldPosition.angular + deltaAngle, lidarScan.distances[i], '#0000ff');
     }
 }
 
@@ -171,6 +169,7 @@ async function main(){
         const robotOdomPosition = model.getOdomPosition(); /* IN ROBOT SPACE */
         const robotInitialPosition = model.getInitialPosition(); /* IN MAP SPACE */
         const robotPosition = model.getWorldPosition();
+        const lidarData = model.getLidarData();
 
         /* DRAW ROBOT */
         canvasManager.getContext().fillStyle = '#000000';
@@ -199,7 +198,7 @@ async function main(){
         drawObstacles(model, canvasManager);
 
         /* DRAW LIDAR RAYS */
-        if(showRays) drawRays(model, canvasManager);
+        if(showRays) drawRays(lidarData, robotPosition, canvasManager);
 
         /* DRAW OBSTACLES ON SECONDARY CANVAS */
         // updateMapOutput(model, mapCanvasManager);
@@ -210,10 +209,10 @@ async function main(){
         }
 
         /* SEND TO BASE NODE SENSOR DATA */
-        /* TODO, IMPLEMENT */
+        await communitionService.post<LidarScan, {}>(POST_LIDAR_DATA_ROUTE, lidarData);
 
         /* RECEIVE NEW COMMAND_VEL */
-        const cmdVelReq = await communitionService.get<CmdVel>('');
+        const cmdVelReq = await communitionService.get<CmdVel>(GET_CMD_VEL_ROUTE);
         model.updateVel(cmdVelReq.linear[0], cmdVelReq.angular);
 
     }, SECOND_MS / FPS );

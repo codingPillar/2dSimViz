@@ -19,10 +19,7 @@ export class Communication {
     }
     post(route, body) {
         return __awaiter(this, void 0, void 0, function* () {
-            /* TODO IMPLEMENT */
-            return (yield new Promise((resolve, reject) => {
-                resolve({});
-            }));
+            return yield (yield fetch(`http://${this.address}:${this.port}/${route}`, { method: "POST", body: JSON.stringify(body) })).json();
         });
     }
 }
