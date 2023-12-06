@@ -94,7 +94,6 @@ int main(int argc, char **argv){
                 cout << "CLIENT DISCONNECTED, NEXT CONNECTION" << endl;
                 continue;
             }
-            cout << "RECEIVED MESSAGE OF SIZE: " << size << endl;
             HttpHeader header = parseHttpReq(buffer.data(), size);
 
             int httpCode = HTTP_OK_CODE;
@@ -106,7 +105,6 @@ int main(int argc, char **argv){
             }else if(strcmp(header.route, GET_CMD_VEL_ROUTE) == 0 && header.verb == parsing::HTTP_GET){
                 response = "{\"linear\": [" + to_string(currentVel.linear.x) + ", " + to_string(currentVel.linear.y) + "], \"angular\": " + to_string(currentVel.angular.z) + "}";
             }else if(strcmp(header.route, POST_LIDAR_DATA_ROUTE) == 0 && header.verb == parsing::HTTP_POST){
-                cout << &buffer.data()[header.bodyStartIndex] << endl;
                 struct LidarData lastLidarData = parseLidarObj(&buffer.data()[header.bodyStartIndex], size - header.bodyStartIndex);
                 currentLidar.angle_min = lastLidarData.minAngle;
                 currentLidar.angle_max = lastLidarData.maxAngle;
@@ -117,7 +115,7 @@ int main(int argc, char **argv){
             }else{
                 cout << "ROUTE: " << header.route << " NOT KNOWN, 404" << endl;
                 httpCode = HTTP_ERROR_CODE;
-                httpCodeStr = "";
+                httpCodeStr = "ERROR";
             }
 
             /* GENERATE RESPONSE */
@@ -147,6 +145,7 @@ int main(int argc, char **argv){
         /* PUBLISH LIDAR DATA */
         lidarPublisher.publish(currentLidar);
 
+        ros::spinOnce();
         rate.sleep();
     }
 

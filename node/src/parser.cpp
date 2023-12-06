@@ -242,7 +242,7 @@ HttpHeader parseHttpReq(const char *buffer, unsigned int length){
         }break;
         case PARSING_BODY:{
             if(!reading && isWhiteSpace(buffer[i])) continue;
-            cout << "FOR NOW DONE WITH PARSING HEADER" << endl;
+            //cout << "FOR NOW DONE WITH PARSING HEADER" << endl;
             header.bodyStartIndex = i;
             return header;
         }break;
