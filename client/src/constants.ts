@@ -41,7 +41,7 @@ export const EPSILON = 0.0001;
 
 /* LIDAR RELATED */
 export const ANGLE_VIEW = Math.PI;
-export const NUM_RAYS = 10;
+export const NUM_RAYS = 20;
 export const ERROR_DISTANCE = -1;
 
 /* COMMUNICATION WITH ROS NODE RELATED */

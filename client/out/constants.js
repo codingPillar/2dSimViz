@@ -33,7 +33,7 @@ export const MAP_IMAGE = [CANVAS_HEIGHT / (2 * CANVAS_TO_MAP_FACTOR), CANVAS_HEI
 export const EPSILON = 0.0001;
 /* LIDAR RELATED */
 export const ANGLE_VIEW = Math.PI;
-export const NUM_RAYS = 10;
+export const NUM_RAYS = 20;
 export const ERROR_DISTANCE = -1;
 /* COMMUNICATION WITH ROS NODE RELATED */
 export const SERVER_ADDRESS = "127.0.0.1";
