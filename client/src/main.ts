@@ -156,7 +156,7 @@ async function main(){
     /* WAIT FOR SERVER CONNEXION */
     await waitForServer(communitionService);
 
-    setInterval(async () => {
+    const run = async () => {
         canvasManager.clearDisplay();
 
         /* DRAW BASIC COORD SYSTEM ARROWS */
@@ -214,8 +214,10 @@ async function main(){
         /* RECEIVE NEW COMMAND_VEL */
         const cmdVelReq = await communitionService.get<CmdVel>(GET_CMD_VEL_ROUTE);
         model.updateVel(cmdVelReq.linear[0], cmdVelReq.angular);
+    };
 
-    }, SECOND_MS / FPS );
+    let running = true;
+    while(running) await run();
 }
 
 main();

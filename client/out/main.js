@@ -8,7 +8,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 import { Communication } from "./communication.js";
-import { BUTTON_ID, CANVAS_HEIGHT, CANVAS_TO_MAP_FACTOR, CANVAS_WIDTH, EPOCH, EPSILON, FPS, GET_CMD_VEL_ROUTE, MAIN_SYSTEM_ARROW_LENGTH, MAP_CANVAS_ID, OUTPUT_MAP_CANVAS_ID, POSITON_INDICATOR_ID, POST_LIDAR_DATA_ROUTE, ROBOT_BOX_SIZE, ROBOT_SYSTEM_ARROW_LENGTH, SECOND_MS, SERVER_ADDRESS, SERVER_PORT, SHOW_BASE_COORD_RADIO_ID, SHOW_RAYS_RADIO_ID, SHOW_ROBOT_COORD_RADIO_ID, SHOW_ROBOT_DIRECTION_RADIO_ID, SHOW_ROBOT_POSITION_RADIO_ID, SYNCHRONIZE_ROUTE, TIME_INDICATOR_ID, XINPUT_ID, YINPUT_ID, ZINPUT_ID } from "./constants.js";
+import { BUTTON_ID, CANVAS_HEIGHT, CANVAS_TO_MAP_FACTOR, CANVAS_WIDTH, EPOCH, EPSILON, GET_CMD_VEL_ROUTE, MAIN_SYSTEM_ARROW_LENGTH, MAP_CANVAS_ID, OUTPUT_MAP_CANVAS_ID, POSITON_INDICATOR_ID, POST_LIDAR_DATA_ROUTE, ROBOT_BOX_SIZE, ROBOT_SYSTEM_ARROW_LENGTH, SERVER_ADDRESS, SERVER_PORT, SHOW_BASE_COORD_RADIO_ID, SHOW_RAYS_RADIO_ID, SHOW_ROBOT_COORD_RADIO_ID, SHOW_ROBOT_DIRECTION_RADIO_ID, SHOW_ROBOT_POSITION_RADIO_ID, SYNCHRONIZE_ROUTE, TIME_INDICATOR_ID, XINPUT_ID, YINPUT_ID, ZINPUT_ID } from "./constants.js";
 import { DrawManager } from "./drawManager.js";
 import { Model } from "./model.js";
 import { Vec2 } from "./vec2.js";
@@ -148,7 +148,7 @@ function main() {
         const communitionService = new Communication(SERVER_ADDRESS, SERVER_PORT);
         /* WAIT FOR SERVER CONNEXION */
         yield waitForServer(communitionService);
-        setInterval(() => __awaiter(this, void 0, void 0, function* () {
+        const run = () => __awaiter(this, void 0, void 0, function* () {
             canvasManager.clearDisplay();
             /* DRAW BASIC COORD SYSTEM ARROWS */
             if (showBaseCoord) {
@@ -197,7 +197,10 @@ function main() {
             /* RECEIVE NEW COMMAND_VEL */
             const cmdVelReq = yield communitionService.get(GET_CMD_VEL_ROUTE);
             model.updateVel(cmdVelReq.linear[0], cmdVelReq.angular);
-        }), SECOND_MS / FPS);
+        });
+        let running = true;
+        while (running)
+            yield run();
     });
 }
 main();
