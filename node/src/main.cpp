@@ -89,45 +89,48 @@ int main(int argc, char **argv){
                 cout << "[ERROR] COULD NOT ACCEPT CONNECTION, ABORT" << endl;
                 continue;
             }
-            int size = recv(connectionFd, buffer.data(), buffer.size(), 0);
-            if(size <= 0){
-                cout << "CLIENT DISCONNECTED, NEXT CONNECTION" << endl;
-                continue;
-            }
-            HttpHeader header = parseHttpReq(buffer.data(), size);
+            /* TODO, MAYBE MANIPULATE VAR INSTEAD OF BREAK */
+            bool connected = true;
+            while(connected){
+                int size = recv(connectionFd, buffer.data(), buffer.size(), 0);
+                if(size <= 0){
+                    cout << "CLIENT DISCONNECTED, NEXT CONNECTION" << endl;
+                    break;
+                }
+                HttpHeader header = parseHttpReq(buffer.data(), size);
 
-            int httpCode = HTTP_OK_CODE;
-            string httpCodeStr = "OK";
-            string response = "{}";
-            /* ROUTE PACKET BY LOOKING AT VERB AND ROUTE */
-            if(strcmp(header.route, GET_SYNC_ROUTE) == 0 && header.verb == parsing::HTTP_GET){
-                /* REPLY 200 IS ENOUGH */
-            }else if(strcmp(header.route, GET_CMD_VEL_ROUTE) == 0 && header.verb == parsing::HTTP_GET){
-                response = "{\"linear\": [" + to_string(currentVel.linear.x) + ", " + to_string(currentVel.linear.y) + "], \"angular\": " + to_string(currentVel.angular.z) + "}";
-            }else if(strcmp(header.route, POST_LIDAR_DATA_ROUTE) == 0 && header.verb == parsing::HTTP_POST){
-                struct LidarData lastLidarData = parseLidarObj(&buffer.data()[header.bodyStartIndex], size - header.bodyStartIndex);
-                currentLidar.angle_min = lastLidarData.minAngle;
-                currentLidar.angle_max = lastLidarData.maxAngle;
-                currentLidar.angle_increment = lastLidarData.angleStep;
-                currentLidar.ranges = lastLidarData.distances;
-                currentLidar.range_max = 12;
-                currentLidar.range_min = 0;
-            }else{
-                cout << "ROUTE: " << header.route << " NOT KNOWN, 404" << endl;
-                httpCode = HTTP_ERROR_CODE;
-                httpCodeStr = "ERROR";
-            }
+                int httpCode = HTTP_OK_CODE;
+                string httpCodeStr = "OK";
+                string response = "{}";
+                /* ROUTE PACKET BY LOOKING AT VERB AND ROUTE */
+                if(strcmp(header.route, GET_SYNC_ROUTE) == 0 && header.verb == parsing::HTTP_GET){
+                    /* REPLY 200 IS ENOUGH */
+                }else if(strcmp(header.route, GET_CMD_VEL_ROUTE) == 0 && header.verb == parsing::HTTP_GET){
+                    response = "{\"linear\": [" + to_string(currentVel.linear.x) + ", " + to_string(currentVel.linear.y) + "], \"angular\": " + to_string(currentVel.angular.z) + "}";
+                }else if(strcmp(header.route, POST_LIDAR_DATA_ROUTE) == 0 && header.verb == parsing::HTTP_POST){
+                    struct LidarData lastLidarData = parseLidarObj(&buffer.data()[header.bodyStartIndex], size - header.bodyStartIndex);
+                    currentLidar.angle_min = lastLidarData.minAngle;
+                    currentLidar.angle_max = lastLidarData.maxAngle;
+                    currentLidar.angle_increment = lastLidarData.angleStep;
+                    currentLidar.ranges = lastLidarData.distances;
+                    currentLidar.range_max = 12;
+                    currentLidar.range_min = 0;
+                }else{
+                    cout << "ROUTE: " << header.route << " NOT KNOWN, 404" << endl;
+                    httpCode = HTTP_ERROR_CODE;
+                    httpCodeStr = "ERROR";
+                }
 
-            /* GENERATE RESPONSE */
-            int responseSize = sprintf(buffer.data(), 
-                HTTP_RESPONSE_FORMAT HTTP_HEADER_FIELD_DELIM
-                "Content-Length: %lu" HTTP_HEADER_FIELD_DELIM
-                "Access-Control-Allow-Origin: *" HTTP_HEADER_FIELD_DELIM
-                HTTP_HEADER_FIELD_DELIM
-                "%s", httpCode, httpCodeStr.c_str(), response.length(), response.c_str());
-            int sent = 0;
-            do{ sent += send(connectionFd, buffer.data(), responseSize, 0); }
-            while(sent != responseSize);  
+                /* GENERATE RESPONSE */
+                int responseSize = sprintf(buffer.data(), 
+                    HTTP_RESPONSE_FORMAT HTTP_HEADER_FIELD_DELIM
+                    "Content-Length: %lu" HTTP_HEADER_FIELD_DELIM
+                    "Access-Control-Allow-Origin: *" HTTP_HEADER_FIELD_DELIM
+                    HTTP_HEADER_FIELD_DELIM
+                    "%s", httpCode, httpCodeStr.c_str(), response.length(), response.c_str());
+                int status = send(connectionFd, buffer.data(), responseSize, 0);
+                if(status <= 0) break;
+            }
             close(connectionFd);
         }
     }};
