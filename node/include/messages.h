@@ -10,4 +10,10 @@ struct LidarData{
     std::vector<float> distances;
 };
 
+struct OdomData{
+    float x;
+    float y;
+    float angle;
+};
+
 #endif //MESSAGES_H

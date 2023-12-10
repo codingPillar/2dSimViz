@@ -17,13 +17,19 @@
 #include "messages.h"
 #include "parser.h"
 
+#define JSON_PARSE_IMPLEMENTATION
+#include "jsonParse.hpp"
+
 #include <ros/ros.h>
+#include <tf2/LinearMath/Quaternion.h>
 #include <sensor_msgs/LaserScan.h>
 #include <geometry_msgs/Twist.h>
+#include <nav_msgs/Odometry.h>
 
 #define NODE_NAME "SimViz2dServer"
 #define COMMAND_VEL_TOPIC "cmd_vel"
 #define LIDAR_DATA_TOPIC "limo/scan"
+#define ODOM_DATA_TOPIC "odom"
 #define PUBLISHER_QUEUE_SIZE 32
 #define PUBLISH_RATE 20
 
@@ -38,6 +44,7 @@ bool running = true;
 /* MAYBE ADD MUTEX, BUT ONLY ONE THREAD WRITES */
 geometry_msgs::Twist currentVel;
 sensor_msgs::LaserScan currentLidar;
+nav_msgs::Odometry currentOdom;
 
 char *readArg(int *argc, char ***argv){
     if(*argc == 0){
@@ -92,6 +99,7 @@ int main(int argc, char **argv){
             /* TODO, MAYBE MANIPULATE VAR INSTEAD OF BREAK */
             bool connected = true;
             while(connected){
+                /* TODO, ADD DELAY FOR WHEN NOT RECEIVING A MESSAGE WITH THAT TIME, BREAK AND CLOSE CONNECTION */
                 int size = recv(connectionFd, buffer.data(), buffer.size(), 0);
                 if(size <= 0){
                     cout << "CLIENT DISCONNECTED, NEXT CONNECTION" << endl;
@@ -108,13 +116,27 @@ int main(int argc, char **argv){
                 }else if(strcmp(header.route, GET_CMD_VEL_ROUTE) == 0 && header.verb == parsing::HTTP_GET){
                     response = "{\"linear\": [" + to_string(currentVel.linear.x) + ", " + to_string(currentVel.linear.y) + "], \"angular\": " + to_string(currentVel.angular.z) + "}";
                 }else if(strcmp(header.route, POST_LIDAR_DATA_ROUTE) == 0 && header.verb == parsing::HTTP_POST){
-                    struct LidarData lastLidarData = parseLidarObj(&buffer.data()[header.bodyStartIndex], size - header.bodyStartIndex);
+                    struct jsonParse::JsonObj json = jsonParse::parseJson(&buffer.data()[header.bodyStartIndex], size - header.bodyStartIndex);
+                    struct LidarData lastLidarData = parseLidarObj(json);
                     currentLidar.angle_min = lastLidarData.minAngle;
                     currentLidar.angle_max = lastLidarData.maxAngle;
                     currentLidar.angle_increment = lastLidarData.angleStep;
                     currentLidar.ranges = lastLidarData.distances;
                     currentLidar.range_max = 12;
                     currentLidar.range_min = 0;
+                }else if(strcmp(header.route, POST_ODOM_DATA_ROUTE) == 0){
+                    struct jsonParse::JsonObj json = jsonParse::parseJson(&buffer.data()[header.bodyStartIndex], size - header.bodyStartIndex);
+                    struct OdomData odom = parseOdomObj(json);
+                    tf2::Quaternion myQuaternion;
+                    myQuaternion.setRPY(0, 0, odom.angle);
+                    myQuaternion.normalize();
+                    currentOdom.pose.pose.position.x = odom.x;
+                    currentOdom.pose.pose.position.y = odom.y;
+
+                    currentOdom.pose.pose.orientation.x = myQuaternion.x();
+                    currentOdom.pose.pose.orientation.y = myQuaternion.y();
+                    currentOdom.pose.pose.orientation.z = myQuaternion.z();
+                    currentOdom.pose.pose.orientation.w = myQuaternion.w();
                 }else{
                     cout << "ROUTE: " << header.route << " NOT KNOWN, 404" << endl;
                     httpCode = HTTP_ERROR_CODE;
@@ -141,12 +163,14 @@ int main(int argc, char **argv){
 
     ros::Subscriber cmdVelListener = SimServerNode.subscribe(COMMAND_VEL_TOPIC, PUBLISHER_QUEUE_SIZE, cmdVelCallback);
     ros::Publisher lidarPublisher = SimServerNode.advertise<sensor_msgs::LaserScan>(LIDAR_DATA_TOPIC, PUBLISHER_QUEUE_SIZE);
+    ros::Publisher odomPublisher = SimServerNode.advertise<nav_msgs::Odometry>(ODOM_DATA_TOPIC, PUBLISHER_QUEUE_SIZE);
 
     /* HANDLE ROS EVENTS ON MAIN THREAD */
     ros::Rate rate(PUBLISH_RATE);
     while(running && ros::ok()){
         /* PUBLISH LIDAR DATA */
         lidarPublisher.publish(currentLidar);
+        odomPublisher.publish(currentOdom);
 
         ros::spinOnce();
         rate.sleep();

@@ -12,7 +12,12 @@
 #define LIDAR_DATA_ANGLE_STEP_KEY "angleStep"
 #define LIDAR_DATA_DISTANCES_KEY "distances"
 
+#define ODOM_DATA_POS_X_KEY "x"
+#define ODOM_DATA_POS_Y_KEY "y"
+#define ODOM_DATA_POS_ANGLE_KEY "angle"
+
 #define POST_LIDAR_DATA_ROUTE "/lidarData"
+#define POST_ODOM_DATA_ROUTE "/odom"
 #define GET_CMD_VEL_ROUTE "/cmdVel"
 #define GET_SYNC_ROUTE "/sync"
 

@@ -8,6 +8,8 @@
 #include "common.h"
 #include "messages.h"
 
+#include "jsonParse.hpp"
+
 namespace parsing {
 
 enum HTTP_VERB{
@@ -21,10 +23,9 @@ struct HttpHeader{
     unsigned int bodyStartIndex;
 };
 
-bool isWhiteSpace(char element);
-std::pair<std::vector<float>, unsigned int> parseList(const char *buffer, unsigned int length);
+struct LidarData parseLidarObj(const struct jsonParse::JsonObj &obj);
+struct OdomData parseOdomObj(const struct jsonParse::JsonObj &obj);
 
-struct LidarData parseLidarObj(const char *buffer, unsigned int length);
 HttpHeader parseHttpReq(const char *buffer, unsigned int length);
 
 }

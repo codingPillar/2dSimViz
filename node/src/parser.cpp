@@ -1,7 +1,12 @@
 #include <cstdlib>
 #include <iostream>
 #include <cstring>
+#include <iterator>
+#include <string>
+#include <vector>
 
+#include "jsonParse.hpp"
+#include "messages.h"
 #include "parser.h"
 
 #define MAX_FLT_STR_SIZE 64
@@ -10,6 +15,13 @@
 using namespace std;
 
 /* PRIVATE FUNCTIONS */
+char whiteSpaces[] = {' ', '\n', '\r'};
+static bool isWhiteSpace(char value){
+    for(unsigned int i = 0; i < sizeof(whiteSpaces); i++)
+        if(value == whiteSpaces[i]) return true;
+    return false;
+}
+
 static void assignLidarDataField(struct LidarData &data, const char *key, void *value){
     if(strcmp(key, LIDAR_DATA_MIN_ANGLE_KEY) == 0) data.minAngle = *((float*) value);
     else if(strcmp(key, LIDAR_DATA_MAX_ANGLE_KEY) == 0) data.maxAngle = *((float*) value);
@@ -17,138 +29,43 @@ static void assignLidarDataField(struct LidarData &data, const char *key, void *
     else if(strcmp(key, LIDAR_DATA_DISTANCES_KEY) == 0) data.distances = *((vector<float>*) value);
 }
 
-static bool isFltNumeric(char value){
-    return (value >= '0' && value <= '9') || value == '.' || value== '-';
-}
-
 namespace parsing {
 
-static char whiteChars[] = {' ', '\n', '\r'};
-bool isWhiteSpace(char element){
-    for(unsigned int i = 0; i < sizeof(whiteChars); i++)
-        if(element == whiteChars[i]) return true;
-    return false;
+struct LidarData parseLidarObj(const struct jsonParse::JsonObj &obj){
+    const char* keys[] = {LIDAR_DATA_MIN_ANGLE_KEY, LIDAR_DATA_MAX_ANGLE_KEY, LIDAR_DATA_ANGLE_STEP_KEY, LIDAR_DATA_DISTANCES_KEY};
+    struct LidarData lidarData;
+    for(unsigned int i = 0; i < sizeof(keys) / sizeof(const char*); i++){
+        const auto &iter = obj.values.find(std::string(keys[i]));
+        if(iter == obj.values.end()){
+            cout << "COULD NOT FIND KEY: " << keys[i] << " FOR LIDAR OBJECT" << endl;
+            return {};
+        }
+        if(iter->second.type == jsonParse::JSON_NUMBER){
+            assignLidarDataField(lidarData, keys[i], iter->second.value);
+            continue;
+        } 
+        /* PARSE LIST */
+        std::vector<float> ranges;
+        auto &values = *(std::vector<jsonParse::JsonObj::JsonValue>*)iter->second.value;
+        for(unsigned int i = 0; i < values.size(); i++) ranges.push_back(*((float*)values[i].value));
+        assignLidarDataField(lidarData, keys[i], &ranges);
+    }
+    return lidarData;
 }
 
-pair<vector<float>, unsigned int> parseList(const char *buffer, unsigned int length){
-    std::vector<float> elems;
-    unsigned int start = 0;
-    bool valueStarted = false;
-    bool waitingSeperator = false;
-    char fltBuffer[MAX_FLT_STR_SIZE] = {0};
-    for(unsigned int i = 0; i < length; i++){
-        if(isFltNumeric(buffer[i]) && !valueStarted){
-            start = i;
-            valueStarted = true;
-        }else if(isWhiteSpace(buffer[i]) && valueStarted){
-            /* READ VALUE */
-            strncpy(fltBuffer, &buffer[start], i - start + 1);
-            elems.push_back(atof(fltBuffer));
-            valueStarted = false;
-            waitingSeperator = true;
-        }else if(waitingSeperator){
-            /* WAITING FOR NEXT SEPERATOR */
-            if(isWhiteSpace(buffer[i])) continue;
-            else{
-                cout << "WRONG FORMAT FOR LISTS, ENCOUTERED VALUE WHEN WAITONG FOR SEPERATOR" << endl;
-                break;
-            }
-        }else if(buffer[i] == ',' || buffer[i] == ']'){
-            if(valueStarted){
-                /* READ VALUE */
-                strncpy(fltBuffer, &buffer[start], i - start + 1);
-                elems.push_back(atof(fltBuffer));
-            }
-            valueStarted = false;
-            waitingSeperator = false;
-            if(buffer[i] == ']') return {elems, i};
-        }
+struct OdomData parseOdomObj(const struct jsonParse::JsonObj &obj){
+    const char* keys[] = {ODOM_DATA_POS_X_KEY, ODOM_DATA_POS_Y_KEY, ODOM_DATA_POS_ANGLE_KEY};
+    struct OdomData data;
+    for(unsigned int i = 0; i < sizeof(keys) / sizeof(char*); i++){
+        const auto &iter = obj.values.find(std::string(keys[i]));
+        if(iter == obj.values.end() || iter->second.type != jsonParse::JSON_NUMBER){
+            cout << "COULD NOT FIND VALUE WITH KEY: " << keys[i] << " OR INVALID FORMAT" << endl;
+            return data;
+        } 
     }
-    return {elems, length};
-}
-
-/* SUPPORTS ONLY VALUES OF TYPE STRING AND LIST OF NUMBERS */
-enum PARSE_OBJECT_STATE{
-    WAITING_INIT,
-    READING_KEY,
-    WAITING_KEY_VALUE_SEP,
-    READING_VALUE,
-    WAITING_SEP,
-    DONE
-};
-struct LidarData parseLidarObj(const char *buffer, unsigned int length){
-    struct LidarData data = {};
-    enum PARSE_OBJECT_STATE state = WAITING_INIT;
-    bool reading = false;
-    char keyBuffer[MAX_KEY_VALUE_BUFFER_SIZE] = {0};
-    unsigned int start = 0;
-    for(unsigned int i = 0; i < length; i++){
-        switch (state) {
-            case WAITING_INIT:{
-                if(buffer[i] == '{') state = READING_KEY;
-                else if(isWhiteSpace(buffer[i])) continue;
-                else{
-                    cout << "ERROR WHILE PARSING JSON, FIRST CHAR NOT {" << endl;
-                    return data;
-                }
-            }break;
-            case READING_KEY:{
-                if(isWhiteSpace(buffer[i])) continue;
-                else if(!reading && buffer[i] == '"'){
-                    start = i;
-                    reading = true;
-                }else if(reading && buffer[i] == '"'){
-                    strncpy(keyBuffer, &buffer[start + 1], i - start - 1);
-                    keyBuffer[i - start - 1] = '\0';
-                    state = WAITING_KEY_VALUE_SEP;
-                    reading = false;
-                }
-            }break;
-            case WAITING_KEY_VALUE_SEP:{
-                if(isWhiteSpace(buffer[i])) continue;
-                if(buffer[i] == ':') state = READING_VALUE;
-                else{
-                    cout << "ERROR WHILE PARSING, WAITING FOR : BUT ENCOUTERED " << buffer[i] << endl;
-                    return {};
-                }
-            }break;
-            case READING_VALUE:{
-                /* FLOAT OR LIST */
-                if(!reading && isWhiteSpace(buffer[i])) continue;
-                if(!reading && isFltNumeric(buffer[i])){
-                    start = i;
-                    reading = true;
-                }else if(!reading && buffer[i] == '['){
-                    pair<vector<float>, unsigned int> list = parseList(&buffer[i], length - i);
-                    assignLidarDataField(data, keyBuffer, (void*) &list.first);
-                    i += list.second;
-                    state = WAITING_SEP;
-                    reading = false;
-                }else if(reading && (isWhiteSpace(buffer[i]) || buffer[i] == ',' || buffer[i] == '}')){
-                    /* DONE READING FLT */
-                    float value = atof(&buffer[start]);
-                    assignLidarDataField(data, keyBuffer, (void*)&value);
-                    reading = false;
-                    if(isWhiteSpace(buffer[i])) state = WAITING_SEP;
-                    else if(buffer[i] == ',') state = READING_KEY;
-                    else state = DONE;
-                }
-            }break;
-            case WAITING_SEP:{
-                reading = false;
-                if(isWhiteSpace(buffer[i])) continue;
-                else if(buffer[i] == ',') state = READING_KEY;
-                else if(buffer[i] == '}') state = DONE;
-                else{
-                    cout << "WAITING FOR SEPERATOR BUT ENCOUTERED INVALID VALUE, ABORT" << endl;
-                    return {};
-                }
-            }break;
-            case DONE:{
-                return data;
-            }break;
-        }
-    }
+    data.x = *((float*)obj.values.find(std::string(ODOM_DATA_POS_X_KEY))->second.value);
+    data.y = *((float*)obj.values.find(std::string(ODOM_DATA_POS_Y_KEY))->second.value);
+    data.angle = *((float*)obj.values.find(std::string(ODOM_DATA_POS_ANGLE_KEY))->second.value);
     return data;
 }
 
