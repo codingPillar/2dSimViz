@@ -30,16 +30,16 @@ enum MOVING_STATE{
     MOVE_STOPPED
 };
 
-sensor_msgs::LaserScan lidarData;
-bool lidarAvailable = false;
+static sensor_msgs::LaserScan lidarData;
+static bool lidarAvailable = false;
 
-geometry_msgs::Twist currentPosition;
+static geometry_msgs::Twist currentPosition;
 
-ros::Publisher *velPublisher = nullptr;
+static ros::Publisher *velPublisher = nullptr;
 
-enum MOVING_STATE state = MOVE_FORWARD;
-float previousRotation = 0;
-float rotationGoal = 0;
+static enum MOVING_STATE state = MOVE_FORWARD;
+static float previousRotation = 0;
+static float rotationGoal = 0;
 
 static void lidarTopicCallback(const sensor_msgs::LaserScan &data){
     lidarData = data;
@@ -71,7 +71,7 @@ static float getMinDistance(const sensor_msgs::LaserScan &lidarData, float fov){
 }
 
 static float getOdomAngle(const geometry_msgs::Twist &position){
-    /* POSITION ANGLE IS BETWEEN [-PI, PI], WE WANT IT IN RIGHT ORDER FROM [0, 2PI] */
+    /* POSITION ANGLE IS BETWEEN [-PI, PI], WE WANT IT IN RIGHT SPACE FROM [0, 2PI] */
     if(position.angular.z > 0) return position.angular.z;
     return 2 * M_PI + position.angular.z; 
 }
