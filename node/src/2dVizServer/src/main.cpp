@@ -51,7 +51,6 @@ static bool running = true;
 static geometry_msgs::Twist currentVel;
 static sensor_msgs::LaserScan currentLidar;
 static nav_msgs::Odometry currentOdom;
-static bool receivedFirstOdom = false; 
 
 /* TF base_link -> odom */
 static tf::TransformBroadcaster *tfBraudcast;
@@ -161,7 +160,6 @@ int main(int argc, char **argv){
                     currentOdom.pose.pose.orientation.y = myQuaternion.y();
                     currentOdom.pose.pose.orientation.z = myQuaternion.z();
                     currentOdom.pose.pose.orientation.w = myQuaternion.w();
-                    receivedFirstOdom = true;
                 }else{
                     cout << "ROUTE: " << header.route << " NOT KNOWN, 404" << endl;
                     httpCode = HTTP_ERROR_CODE;
@@ -193,13 +191,18 @@ int main(int argc, char **argv){
     ros::Publisher lidarPublisher = SimServerNode.advertise<sensor_msgs::LaserScan>(LIDAR_DATA_TOPIC, PUBLISHER_QUEUE_SIZE);
     ros::Publisher odomPublisher = SimServerNode.advertise<nav_msgs::Odometry>(ODOM_DATA_TOPIC, PUBLISHER_QUEUE_SIZE);
 
+    currentOdom.child_frame_id = ODOM_DATA_TOPIC;
+    currentOdom.header.stamp = ros::Time::now();
+    currentOdom.header.frame_id = ODOM_DATA_TOPIC;
+    currentOdom.pose.pose.orientation.w = 1;
+
     /* HANDLE ROS EVENTS ON MAIN THREAD */
     ros::Rate rate(PUBLISH_RATE);
     while(running && ros::ok()){
         /* PUBLISH LIDAR DATA */
         lidarPublisher.publish(currentLidar);
         odomPublisher.publish(currentOdom);
-        if(receivedFirstOdom) baseLinkToOdomBraudcast(currentOdom);
+        baseLinkToOdomBraudcast(currentOdom);
 
         ros::spinOnce();
         rate.sleep();

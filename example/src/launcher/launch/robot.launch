@@ -5,7 +5,10 @@
     <arg name="port" default="6001"/>
     <node pkg="compute" type="compute_node" name="compute" output="screen"></node>
     <node pkg="dispatch" type="server.py" name="server" args="$(arg port)" output="screen"></node>
-    <node pkg="2dVizServer" type="2dVizServer_node" name="2dVizServer" args="50601" output="screen"></node>
+    
+    <!-- SEE WHY CANT REFERENCE OTHER PACKAGES FROM HERE
+    <node pkg="2dVizServer" type="2dVizServer_node" name="VizServer2d" args="50601" output="screen"></node>
+    -->
 
     <arg name="scan_topic" default="limo/scan"/> 
     <arg name="base_frame" default="base_link"/> 
@@ -43,12 +46,12 @@
         <rosparam file="$(find launcher)/config/planner.yaml" command="load"/>
                 
         <!--  ************** Global_Costmap *************** -->
-        <param name="global_costmap/robot_base_frame" value="base_link"/>
+        <param name="global_costmap/robot_base_frame" value="$(arg base_frame)"/>
 
         <!--  ************** Local_Costmap *************** -->
-        <param name="local_costmap/robot_base_frame" value="base_link"/>
+        <param name="local_costmap/robot_base_frame" value="$(arg base_frame)"/>
 
-        <remap from="~scan" to="~limo/scan"/>
+        <remap from="scan" to="$(arg scan_topic)"/>
 	</node>
 
 </launch>

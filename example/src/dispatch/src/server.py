@@ -6,7 +6,7 @@ import signal
 from http.server import BaseHTTPRequestHandler, HTTPServer
 
 import rospy
-from std_srvs.srv import EmptyRequest
+from std_srvs.srv import Empty, EmptyRequest
 
 # FINAL CONSTANTS
 ROBOT_IP='0.0.0.0'
@@ -15,6 +15,7 @@ CMD_PARAM_NAME = 'cmd'
 
 START_SERVICE = 'start'
 STOP_SERVICE = 'stop'
+RETURN_BASE_SERVICE = 'return'
 CHANGE_ALGORITHM = 'change'
 CHANGE_ALG_ALGORITHM_KEY = 'algorithm'
 
@@ -53,10 +54,6 @@ class DispatcherServer(BaseHTTPRequestHandler):
         super().__init__(request, client_address, server)
 
     def do_GET(self):
-        self.send_header("Content-type", "json")
-        self.send_header("Access-Control-Allow-Origin", "*")
-        self.end_headers()
-
         params: dict = parseRoute(self.path)
         if not params.get(CMD_PARAM_NAME):
             self.send_response(HTTP_ERROR_CODE)
@@ -64,21 +61,29 @@ class DispatcherServer(BaseHTTPRequestHandler):
 
         # DISPATCH TO CORRECT SERVICE
         dispatched = True
-
+ 
+        # TODO, REFRACTOR SINCE ALL SERVICES TAKE SAME ARGS 
         if params[CMD_PARAM_NAME] == START_SERVICE:
-            client = rospy.ServiceProxy(START_SERVICE)
+            client = rospy.ServiceProxy(START_SERVICE, Empty)
             client.call(EmptyRequest())
         elif params[CMD_PARAM_NAME] == STOP_SERVICE:
-            client = rospy.ServiceProxy(STOP_SERVICE)
+            client = rospy.ServiceProxy(STOP_SERVICE, Empty)
+            client.call(EmptyRequest())
+        elif params[CMD_PARAM_NAME] == RETURN_BASE_SERVICE:
+            client = rospy.ServiceProxy(RETURN_BASE_SERVICE, Empty)
             client.call(EmptyRequest())
         elif params[CMD_PARAM_NAME] == CHANGE_ALGORITHM:
-            pass
-            # TODO, implement
+            client = rospy.ServiceProxy(CHANGE_ALGORITHM, Empty)
+            client.call(EmptyRequest())
         else:
             dispatched = False
 
         if dispatched: self.send_response(HTTP_OK_CODE)
         else: self.send_response(HTTP_ERROR_CODE)
+
+        self.send_header("Content-type", "json")
+        self.send_header("Access-Control-Allow-Origin", "*")
+        self.end_headers()
 
 if __name__ == "__main__":
     print(sys.argv)
