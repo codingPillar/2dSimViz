@@ -16,11 +16,13 @@
 #include "common.h"
 #include "messages.h"
 #include "parser.h"
+#include "ros/time.h"
 
 #define JSON_PARSE_IMPLEMENTATION
 #include "jsonParse.hpp"
 
 #include <ros/ros.h>
+#include <tf/transform_broadcaster.h>
 #include <tf2/LinearMath/Quaternion.h>
 #include <sensor_msgs/LaserScan.h>
 #include <geometry_msgs/Twist.h>
@@ -30,6 +32,9 @@
 #define COMMAND_VEL_TOPIC "cmd_vel"
 #define LIDAR_DATA_TOPIC "limo/scan"
 #define ODOM_DATA_TOPIC "odom"
+
+#define LASER_LINK_NAME "laser_link"
+
 #define PUBLISHER_QUEUE_SIZE 32
 #define PUBLISH_RATE 20
 
@@ -38,15 +43,20 @@ using namespace parsing;
 
 struct Args{
     uint16_t port;
-} args; 
+    std::string baseLink;
+} static args; 
 
-bool running = true;
+static bool running = true;
 /* MAYBE ADD MUTEX, BUT ONLY ONE THREAD WRITES */
-geometry_msgs::Twist currentVel;
-sensor_msgs::LaserScan currentLidar;
-nav_msgs::Odometry currentOdom;
+static geometry_msgs::Twist currentVel;
+static sensor_msgs::LaserScan currentLidar;
+static nav_msgs::Odometry currentOdom;
+static bool receivedFirstOdom = false; 
 
-char *readArg(int *argc, char ***argv){
+/* TF base_link -> odom */
+static tf::TransformBroadcaster *tfBraudcast;
+
+static char *readArg(int *argc, char ***argv){
     if(*argc == 0){
         cout << "USAGE\nnode <port>" << endl;
         exit(EXIT_ERROR);
@@ -57,7 +67,15 @@ char *readArg(int *argc, char ***argv){
     return temp;
 }
 
-void cmdVelCallback(const geometry_msgs::Twist &vel){
+/* @odom: LAST POSITION RECORDED BY ODOMETER */
+void baseLinkToOdomBraudcast(const nav_msgs::Odometry &odom){
+    tf::Transform transform;
+    transform.setOrigin(tf::Vector3(odom.pose.pose.position.x, odom.pose.pose.position.y, 0));
+    transform.setRotation(tf::Quaternion(odom.pose.pose.orientation.x, odom.pose.pose.orientation.y, odom.pose.pose.orientation.z, odom.pose.pose.orientation.w));
+    tfBraudcast->sendTransform(tf::StampedTransform(transform, ros::Time::now(), ODOM_DATA_TOPIC, args.baseLink));
+}
+
+static void cmdVelCallback(const geometry_msgs::Twist &vel){
     currentVel = vel;
 }
 
@@ -70,6 +88,8 @@ int main(int argc, char **argv){
     char **tempargv = argv;
     (void) readArg(&tempargc, &tempargv); /* SKIP THE NAME ARG */
     args.port = (uint16_t) atoi(readArg(&tempargc, &tempargv));
+    /* TODO, READ FROM COMMAND LINE BASE LINK NAME */
+    args.baseLink = "base_link";
 
     /* OPEN TCP/HTTP SERVER (FOR NOW WE HANDLE ONLY ONE CLIENT) */
     struct sockaddr_in addr = {};
@@ -118,6 +138,9 @@ int main(int argc, char **argv){
                 }else if(strcmp(header.route, POST_LIDAR_DATA_ROUTE) == 0 && header.verb == parsing::HTTP_POST){
                     struct jsonParse::JsonObj json = jsonParse::parseJson(&buffer.data()[header.bodyStartIndex], size - header.bodyStartIndex);
                     struct LidarData lastLidarData = parseLidarObj(json);
+                    //cout << &buffer.data()[header.bodyStartIndex] << endl;
+                    currentLidar.header.stamp = ros::Time::now();
+                    currentLidar.header.frame_id = LASER_LINK_NAME;
                     currentLidar.angle_min = lastLidarData.minAngle;
                     currentLidar.angle_max = lastLidarData.maxAngle;
                     currentLidar.angle_increment = lastLidarData.angleStep;
@@ -130,6 +153,7 @@ int main(int argc, char **argv){
                     tf2::Quaternion myQuaternion;
                     myQuaternion.setRPY(0, 0, odom.angle);
                     myQuaternion.normalize();
+                    currentOdom.child_frame_id = ODOM_DATA_TOPIC;
                     currentOdom.pose.pose.position.x = odom.x;
                     currentOdom.pose.pose.position.y = odom.y;
 
@@ -137,6 +161,7 @@ int main(int argc, char **argv){
                     currentOdom.pose.pose.orientation.y = myQuaternion.y();
                     currentOdom.pose.pose.orientation.z = myQuaternion.z();
                     currentOdom.pose.pose.orientation.w = myQuaternion.w();
+                    receivedFirstOdom = true;
                 }else{
                     cout << "ROUTE: " << header.route << " NOT KNOWN, 404" << endl;
                     httpCode = HTTP_ERROR_CODE;
@@ -161,6 +186,9 @@ int main(int argc, char **argv){
     ros::init(argc, argv, NODE_NAME);
     ros::NodeHandle SimServerNode;
 
+    tf::TransformBroadcaster tfBraudcast;
+    ::tfBraudcast = &tfBraudcast;
+
     ros::Subscriber cmdVelListener = SimServerNode.subscribe(COMMAND_VEL_TOPIC, PUBLISHER_QUEUE_SIZE, cmdVelCallback);
     ros::Publisher lidarPublisher = SimServerNode.advertise<sensor_msgs::LaserScan>(LIDAR_DATA_TOPIC, PUBLISHER_QUEUE_SIZE);
     ros::Publisher odomPublisher = SimServerNode.advertise<nav_msgs::Odometry>(ODOM_DATA_TOPIC, PUBLISHER_QUEUE_SIZE);
@@ -171,6 +199,7 @@ int main(int argc, char **argv){
         /* PUBLISH LIDAR DATA */
         lidarPublisher.publish(currentLidar);
         odomPublisher.publish(currentOdom);
+        if(receivedFirstOdom) baseLinkToOdomBraudcast(currentOdom);
 
         ros::spinOnce();
         rate.sleep();

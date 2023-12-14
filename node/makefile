@@ -17,7 +17,7 @@ SRC_COMP_OBJ+=$(TEST_OBJ_COMP)
 CXX:=g++
 CXX_INCLUDE:=-I./include -I/opt/ros/noetic/include -I/main/lib/include
 CXX_FLAGS:=-Wall -Wextra
-CXX_LINK_FLAGS:=-L/opt/ros/noetic/lib -L/main/lib/lib -lpthread -lroscpp -lrosconsole -lroscpp_serialization -lrostime
+CXX_LINK_FLAGS:=-L/opt/ros/noetic/lib -L/main/lib/lib -lpthread -lroscpp -lrosconsole -lroscpp_serialization -lrostime -ltf
 
 OUT_FILE:=node
 
