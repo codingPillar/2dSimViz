@@ -9,7 +9,7 @@
     padding-bottom: 1em;
 }
 
-#mapCanvas, #outputMapCanvas{
+#mapCanvas{
     border: black solid 2px;
 }
 

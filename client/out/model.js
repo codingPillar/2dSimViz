@@ -57,10 +57,10 @@ export class Model {
         for (let i = 0; i < DEFAULT_OBSTACLE_COUNT; i++)
             this.addRandomObstacle();
         /* ADD MAP BOUNDS OBSTACLE */
-        this.obstacles.push(new LineObs(new Vec2(-MAP_DOMAIN[0], MAP_DOMAIN[1]), new Vec2(MAP_DOMAIN[0], MAP_DOMAIN[1])));
-        this.obstacles.push(new LineObs(new Vec2(-MAP_DOMAIN[0], -MAP_DOMAIN[1]), new Vec2(MAP_DOMAIN[0], -MAP_DOMAIN[1])));
-        this.obstacles.push(new LineObs(new Vec2(-MAP_DOMAIN[0], -MAP_DOMAIN[1]), new Vec2(-MAP_DOMAIN[0], MAP_DOMAIN[1])));
-        this.obstacles.push(new LineObs(new Vec2(MAP_DOMAIN[0], -MAP_DOMAIN[1]), new Vec2(MAP_DOMAIN[0], MAP_DOMAIN[1])));
+        this.obstacles.push(new LineObs(new Vec2(-MAP_DOMAIN[0], MAP_IMAGE[1]), new Vec2(MAP_DOMAIN[0], MAP_IMAGE[1])));
+        this.obstacles.push(new LineObs(new Vec2(-MAP_DOMAIN[0], -MAP_IMAGE[1]), new Vec2(MAP_DOMAIN[0], -MAP_IMAGE[1])));
+        this.obstacles.push(new LineObs(new Vec2(-MAP_DOMAIN[0], -MAP_IMAGE[1]), new Vec2(-MAP_DOMAIN[0], MAP_IMAGE[1])));
+        this.obstacles.push(new LineObs(new Vec2(MAP_DOMAIN[0], -MAP_IMAGE[1]), new Vec2(MAP_DOMAIN[0], MAP_IMAGE[1])));
     }
     updateSim() {
         /* FOUR DIFF */

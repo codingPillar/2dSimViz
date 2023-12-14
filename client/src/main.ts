@@ -83,6 +83,8 @@ function drawRays(lidarScan: LidarScan, worldPosition: Twist, canvasManager: Dra
     }
 }
 
+/* USE WHEN READY TO HAVE SECOND CANVAS FOR MAP VIZ */
+/*
 function updateMapOutput(model: Model, canvasManager: DrawManager){
     const data = model.getLidarData();
     const position = model.getOdomPosition();
@@ -95,6 +97,7 @@ function updateMapOutput(model: Model, canvasManager: DrawManager){
         context.fillRect(canvasEndPoint.x, canvasEndPoint.y, 10, 10);
     }
 }
+*/
 
 async function main(){
     console.log("HOLLA");
@@ -106,17 +109,22 @@ async function main(){
     const zinput = document.getElementById(ZINPUT_ID) as HTMLInputElement;
     const positionIdicator = document.getElementById(POSITON_INDICATOR_ID) as HTMLDivElement;
     const timeIdicator = document.getElementById(TIME_INDICATOR_ID) as HTMLDivElement;
-    const outputMapCanvas = document.getElementById(OUTPUT_MAP_CANVAS_ID) as HTMLCanvasElement;
+
+    /* USE WHEN READY TO HAVE SECOND CANVAS FOR MAP VIZ */
+    //const outputMapCanvas = document.getElementById(OUTPUT_MAP_CANVAS_ID) as HTMLCanvasElement;
     
+    const model = new Model();
+
+    const canvasManager = new DrawManager(mapCanvas);
     mapCanvas.setAttribute("width", CANVAS_WIDTH.toString());
     mapCanvas.setAttribute("height", CANVAS_HEIGHT.toString());
 
+    /* USE WHEN READY TO HAVE SECOND CANVAS FOR MAP VIZ */
+    /*
+    const mapCanvasManager = new DrawManager(outputMapCanvas);
     outputMapCanvas.setAttribute("height", CANVAS_HEIGHT.toString());
     outputMapCanvas.setAttribute("width", CANVAS_WIDTH.toString());
-
-    const model = new Model();
-    const canvasManager = new DrawManager(mapCanvas);
-    const mapCanvasManager = new DrawManager(outputMapCanvas);
+    */
 
     mapCanvas.addEventListener('click', (event: MouseEvent) => {
         model.setInitialPosition(canvasManager.transformToDomainCoord(new Vec2(event.offsetX, event.offsetY)),
@@ -201,6 +209,7 @@ async function main(){
         if(showRays) drawRays(lidarData, robotPosition, canvasManager);
 
         /* DRAW OBSTACLES ON SECONDARY CANVAS */
+        /* USE WHEN READY TO HAVE SECOND CANVAS FOR MAP VIZ */
         // updateMapOutput(model, mapCanvasManager);
 
         /* UPDATE SIM */

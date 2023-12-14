@@ -1,5 +1,5 @@
-export const CANVAS_WIDTH = 500;
-export const CANVAS_HEIGHT = 500;
+export const CANVAS_WIDTH = 1080;
+export const CANVAS_HEIGHT = 720;
 /* HTML RELATED */
 export const MAP_CANVAS_ID = "mapCanvas";
 export const BUTTON_ID = "formSubmit";
@@ -33,7 +33,7 @@ export const MAP_IMAGE = [CANVAS_HEIGHT / (2 * CANVAS_TO_MAP_FACTOR), CANVAS_HEI
 export const EPSILON = 0.0001;
 /* LIDAR RELATED */
 export const ANGLE_VIEW = Math.PI;
-export const NUM_RAYS = 20;
+export const NUM_RAYS = 30;
 export const ERROR_DISTANCE = -1;
 /* COMMUNICATION WITH ROS NODE RELATED */
 export const SERVER_ADDRESS = "127.0.0.1";
