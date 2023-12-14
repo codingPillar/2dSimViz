@@ -3,18 +3,26 @@
 #include <iostream>
 
 #include "ros/ros.h"
-#include <tf/tf.h>
+#include "tf/tf.h"
 
 #include "nav_msgs/Odometry.h"
+#include "ros/service_server.h"
 #include "sensor_msgs/LaserScan.h"
 #include "geometry_msgs/Twist.h"
+#include "std_srvs/Empty.h"
 
 #define NODE_NAME "compute" 
-#define COMPUTE_NODE_FREQ 10
-#define QUEUE_SIZE 32
+
 #define LIDAR_TOPIC "limo/scan"
 #define CMD_VEL_TOPIC "cmd_vel"
 #define ODOM_TOPIC "odom"
+
+#define START_SRV "start"
+#define STOP_SRV "stop"
+#define CHANGE_ALGO_SRV "change"
+
+#define COMPUTE_NODE_FREQ 10
+#define QUEUE_SIZE 32
 
 #define FIELD_VIEW (3.1415F / 3.0F)
 #define MAX_ALLOWED_DISTANCE 0.4F
@@ -41,6 +49,24 @@ static enum MOVING_STATE state = MOVE_FORWARD;
 static float previousRotation = 0;
 static float rotationGoal = 0;
 
+/* PRIVATE FUNCTIONS */
+static float getMinDistance(const sensor_msgs::LaserScan &lidarData, float fov){
+    unsigned int length = fov * lidarData.ranges.size() / (lidarData.angle_max - lidarData.angle_min);
+    if(length > lidarData.ranges.size()) length = lidarData.ranges.size();
+    const unsigned int startIndex = (lidarData.ranges.size() - length) / 2;
+    float minDistance = -1;
+    for(unsigned int i = 0; i < length; i++)
+        if(minDistance < 0 || minDistance > lidarData.ranges[startIndex + i]) minDistance = lidarData.ranges[startIndex + i];
+    return minDistance;
+}
+
+static float getOdomAngle(const geometry_msgs::Twist &position){
+    /* POSITION ANGLE IS BETWEEN [-PI, PI], WE WANT IT IN RIGHT SPACE FROM [0, 2PI] */
+    if(position.angular.z > 0) return position.angular.z;
+    return 2 * M_PI + position.angular.z; 
+}
+
+/* TOPIC CALLBACK FUNCTIONS */
 static void lidarTopicCallback(const sensor_msgs::LaserScan &data){
     lidarData = data;
     lidarAvailable = true;
@@ -60,21 +86,17 @@ static void odomDataCallback(const nav_msgs::Odometry &data){
     currentPosition.angular.z = yaw;
 }
 
-static float getMinDistance(const sensor_msgs::LaserScan &lidarData, float fov){
-    unsigned int length = fov * lidarData.ranges.size() / (lidarData.angle_max - lidarData.angle_min);
-    if(length > lidarData.ranges.size()) length = lidarData.ranges.size();
-    const unsigned int startIndex = (lidarData.ranges.size() - length) / 2;
-    float minDistance = -1;
-    for(unsigned int i = 0; i < length; i++)
-        if(minDistance < 0 || minDistance > lidarData.ranges[startIndex + i]) minDistance = lidarData.ranges[startIndex + i];
-    return minDistance;
+/* SERVICE CALLBACK FUNCTIONS */
+bool startSrvCallback(std_srvs::Empty::Request &req, std_srvs::Empty::Response &res){
+    cout << "[COMPUTE] START SERVICE CALLED" << endl;
+    return true;
 }
 
-static float getOdomAngle(const geometry_msgs::Twist &position){
-    /* POSITION ANGLE IS BETWEEN [-PI, PI], WE WANT IT IN RIGHT SPACE FROM [0, 2PI] */
-    if(position.angular.z > 0) return position.angular.z;
-    return 2 * M_PI + position.angular.z; 
+bool stopSrvCallback(std_srvs::Empty::Request &req, std_srvs::Empty::Response &res){
+    cout << "[COMPUTE] STOP SERVICE CALLED" << endl;
+    return true;
 }
+
 
 static void computeIteration(){
     if(!lidarAvailable) return;
@@ -119,10 +141,15 @@ int main(int argc, char **argv){
     ros::init(argc, argv, NODE_NAME);
     ros::NodeHandle computeNode;
 
+    /* TOPIC SETUP */
     ros::Subscriber lidarSub = computeNode.subscribe(LIDAR_TOPIC, QUEUE_SIZE, lidarTopicCallback);
     ros::Subscriber odomSub = computeNode.subscribe(ODOM_TOPIC, QUEUE_SIZE, odomDataCallback);
     ros::Publisher  velPublisher = computeNode.advertise<geometry_msgs::Twist>(CMD_VEL_TOPIC, QUEUE_SIZE);
     ::velPublisher = &velPublisher;
+
+    /* SERVICE SETUP */
+    ros::ServiceServer startSrv = computeNode.advertiseService(START_SRV, startSrvCallback);
+    ros::ServiceServer stopSrv  = computeNode.advertiseService(STOP_SRV, stopSrvCallback);
 
     geometry_msgs::Twist reset;
     velPublisher.publish(reset);

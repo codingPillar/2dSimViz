@@ -1,3 +1,5 @@
+# OLD WAY OF COMPILING, SHOULD BE USING CATKIN_MAKE INSTEAD
+
 SRC_FOLDER:=src
 OUT_FOLDER:=compile
 TEST_FOLDER:=test
@@ -15,7 +17,7 @@ TEST_OBJ_COMP:=$(TEST_SRC:$(TEST_FOLDER)/%.cpp=$(OUT_FOLDER)/%.cpp.comp)
 SRC_COMP_OBJ+=$(TEST_OBJ_COMP)
 
 CXX:=g++
-CXX_INCLUDE:=-I./include -I/opt/ros/noetic/include -I/main/lib/include
+CXX_INCLUDE:=-I./include/2dVizServer -I/opt/ros/noetic/include -I/main/lib/include
 CXX_FLAGS:=-Wall -Wextra
 CXX_LINK_FLAGS:=-L/opt/ros/noetic/lib -L/main/lib/lib -lpthread -lroscpp -lrosconsole -lroscpp_serialization -lrostime -ltf
 
