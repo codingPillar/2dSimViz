@@ -1,3 +1,7 @@
 .cache
 build
 devel
+
+src/2dVizServer/compile
+src/2dVizServer/tests
+src/2dVizServer/node
