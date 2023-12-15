@@ -39,7 +39,7 @@ typedef actionlib::SimpleActionClient<move_base_msgs::MoveBaseAction> MoveBaseCl
 #define FIELD_VIEW (3.1415F / 3.0F)
 #define MAX_ALLOWED_DISTANCE 0.4F
 #define DEFAULT_ANGULAR_VEL (0.50F)
-#define DEFAULT_LINEAR_VEL 0.1F
+#define DEFAULT_LINEAR_VEL 0.5F
 #define ROTATION_GOAL_REACHED_UNVERTAINTY (0.15F)
 
 #define EXIT_ERROR 1
