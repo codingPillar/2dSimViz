@@ -34,6 +34,7 @@ def MapTopicCallback(msg: OccupancyGrid):
 
 def drawMap(label: QtWidgets.QLabel):
     # WE ONLY WANT TO DRAW IN CASE WE HAVE NEW MAP RECEIVED
+    label.pixmap().fill(Qt.white)
     global mapData, mapDataReady
     if not mapDataReady: return
     width  = WINDOW_WIDTH / mapData.info.width
