@@ -27,7 +27,7 @@ export const ROBOT_SYSTEM_ARROW_LENGTH = 50;
 export const FPS = 20;
 export const SECOND_MS = 1000; 
 export const dt = 0.001;
-export const EPOCH = 20;
+export const EPOCH = 10;
 /* WITH THESE CONFIGS, WE HAVE 20 * 0.001 * 20 = 0.4 SEC PER 1 SEC IN REAL LIFE */
 
 /* MAP RELATED */

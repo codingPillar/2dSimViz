@@ -16,7 +16,6 @@ class InputCheckBox {
     constructor(target, callback = (target) => { }, initial = false) {
         this.checked = false;
         this.target = target;
-        this.callback = callback;
         this.checked = initial;
         this.target.checked = this.checked;
         target.addEventListener('click', (event) => {
@@ -122,9 +121,6 @@ function main() {
         outputMapCanvas.setAttribute("height", CANVAS_HEIGHT.toString());
         outputMapCanvas.setAttribute("width", CANVAS_WIDTH.toString());
         */
-        mapCanvas.addEventListener('click', (event) => {
-            model.setInitialPosition(canvasManager.transformToDomainCoord(new Vec2(event.offsetX, event.offsetY)), Number.parseFloat(zinput.value));
-        });
         formButton.addEventListener('click', (event) => {
             event.preventDefault();
             model.setInitialPosition(new Vec2(Number.parseFloat(xinput.value), Number.parseFloat(yinput.value)), Number.parseFloat(zinput.value));

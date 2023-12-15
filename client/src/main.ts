@@ -8,11 +8,9 @@ import { Vec2 } from "./vec2.js";
 class InputCheckBox{
     private target: HTMLInputElement;
     private checked = false;
-    private callback: (target: InputCheckBox) => void;
 
     constructor(target: HTMLInputElement, callback = (target: InputCheckBox) => {}, initial: boolean = false){
         this.target = target;
-        this.callback = callback;
         this.checked = initial;
         this.target.checked = this.checked;
         target.addEventListener('click', (event: MouseEvent) => {
@@ -125,11 +123,6 @@ async function main(){
     outputMapCanvas.setAttribute("height", CANVAS_HEIGHT.toString());
     outputMapCanvas.setAttribute("width", CANVAS_WIDTH.toString());
     */
-
-    mapCanvas.addEventListener('click', (event: MouseEvent) => {
-        model.setInitialPosition(canvasManager.transformToDomainCoord(new Vec2(event.offsetX, event.offsetY)),
-            Number.parseFloat(zinput.value));
-    });
 
     formButton.addEventListener('click', (event: MouseEvent) => {
         event.preventDefault();
