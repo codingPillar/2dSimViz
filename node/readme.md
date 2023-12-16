@@ -39,4 +39,4 @@ make tests
 
 # TODO
 
-## Automaticaly Launch chrome window when starting server and destroying that same window when stopping the server
+## Automatically Launch chrome window when starting server and destroying that same window when stopping the server
