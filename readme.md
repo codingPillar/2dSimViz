@@ -30,3 +30,11 @@ catkin_make
 ### Might need to refresh page between runs
 
 # You can then send a start command to the robot as explained in the example folder readme.md and see the robot moving in the web interface
+
+# Result
+
+## Start and Change Algorithm 
+<video width="630" height="300" src="./images/start&change.mp4"></video>
+
+## Stop and Return 
+<video width="630" height="300" src="./images/stop&return.mp4"></video>
