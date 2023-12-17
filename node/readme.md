@@ -6,6 +6,9 @@
 
 ## The role for this node is to subscribe to the cmd_vel topic and send the received data to the web environment and to publish the odom and lidar data to the ROS subsystem. Is also publishes the transform from the base_link coordinate system to the odom coordinate system (Needed by slam_gmapping node). This node could be extented to work quite easily with robot_state_publisher and robot_joint_states nodes but since it is a 2d sim, it is easier to model everything as a single link. 
 
+## To parse the JSON payload from the HTTP communication, I use a simple C++ header only json parsing library that I built.
+## The header provided inside this project is not the last version, see the library in my github at: https://github.com/codingPillar/JsonParse
+
 # GETTING STARTED
 
 ## We have 2 supported build systems, make and cmake (through catkin_make).
